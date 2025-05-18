@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    container_name: pgdb
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+  app:
+    build: .
+    restart: always
+    container_name: application
+    command: python3 main.py
+    ports:
+      - ${APP_PORT_IN}:${APP_PORT_OUT}
+    depends_on:
+      - db
+    volumes:
+      - .:/src/app
+
+volumes:
+  dbdata: null
