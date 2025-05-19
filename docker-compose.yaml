@@ -22,7 +22,7 @@ services:
     build: .
     restart: always
     container_name: application
-    command: python3 main.py
+    command: python3 server/main.py
     ports:
       - ${APP_PORT_IN}:${APP_PORT_OUT}
     depends_on:

@@ -18,6 +18,9 @@ async def insert_new_pos():
 async def get_all_pos():
     pass
 
+@app.get("/create_table_users")
+async def create():
+    await user_table.create_table()
 
 if(__name__ == "__main__"):
-    uvicorn.run("main:app", host="0.0.0.0", port=80, reload=True)
+    uvicorn.run("main:app", host="localhost", port=8001, reload=True)

@@ -1,21 +1,26 @@
 import asyncpg
 import asyncio
 from decimal import Decimal
+import dotenv
+import os
 
 class Database:
     def __init__(self):
         self.pool = None
 
     async def connect(self):
-        config = {"user": "postgres", "password": "856901RFv", "database":"AppMarketAutodetails", "host": "localhost"}
+        config = {"user": "admin", "password": "856901", "database":"AppMarketAutodetails", "host": "0.0.0.0"}
         self.pool = await asyncpg.create_pool(**config)
 
 class TableUsers:
-    def __init__(self, conn: asyncpg.Pool):
+    def __init__(self):
         self.nametable = "Users"
-        self.__conn = conn
+        self.__conn = None
 
     async def create_table(self):
+        db = Database()
+        await db.connect()
+        self.__conn = db.pool
         async with self.__conn.acquire() as conn:
             await conn.execute(""" CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, name TEXT, balance numeric, password bytea ) """)
 
@@ -40,5 +45,5 @@ class TableOrders:
     def __init__(self):
         pass
 
-db = Database().connect()
+user_table = TableUsers()
         
