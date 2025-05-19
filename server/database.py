@@ -22,15 +22,15 @@ class TableUsers:
         await db.connect()
         self.__conn = db.pool
         async with self.__conn.acquire() as conn:
-            await conn.execute(""" CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, name TEXT, balance numeric, password bytea ) """)
+            await conn.execute(""" CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, name TEXT, admin boolean ,balance numeric, password bytea ) """)
 
-    async def insert_into_table(self, name: str ,balance: Decimal, passwd: bytes):
+    async def insert_into_table(self, name: str ,balance: Decimal, passwd: bytes, admin: bool):
         async with self.__conn.acquire() as conn:
-            await conn.execute(""" INSERT INTO users (name, balance, password) VALUES($1, $2, $3) """, name, balance, passwd)
+            await conn.execute(""" INSERT INTO users (name, admin, balance, password) VALUES($1, $2, $3, $4) """, name, admin, balance, passwd)
 
     async def get_data(self) -> dict:
         async with self.__conn.acquire() as conn:
-            dicts = [dict(row) for row in await conn.fetch(""" SELECT (name, balance) FROM users """)]
+            dicts = [dict(row) for row in await conn.fetch(""" SELECT (id, name, balance) FROM users """)]
             return dicts
         
 class TableBasket:

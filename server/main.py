@@ -25,12 +25,17 @@ async def create():
     return {"status": "ok"}
 
 @app.post("/insert")
-async def insert_db(name: str, passwd: str):
+async def insert_db(name: str, passwd: str, admin: bool):
     passwd = passwd.encode("utf-8")
     hashed = bcrypt.hashpw(passwd, bcrypt.gensalt())
-    await user_table.insert_into_table(name, Decimal(0), hashed)
+    await user_table.insert_into_table(name, Decimal(0), hashed, admin)
     return {"status": "ok"}
-    
+
+@app.get("/get_users")
+async def get_all_users():
+    data =  await user_table.get_data()
+    return data
+
 
 if(__name__ == "__main__"):
     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
