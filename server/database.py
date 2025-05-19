@@ -9,7 +9,7 @@ class Database:
         self.pool = None
 
     async def connect(self):
-        config = {"user": "admin", "password": "856901", "database":"AppMarketAutodetails", "host": "0.0.0.0"}
+        config = {"user": "admin", "password": "856901", "database":"AppMarketAutodetails", "host": "db"}
         self.pool = await asyncpg.create_pool(**config)
 
 class TableUsers:
