@@ -33,5 +33,45 @@ async def res_is_admin(id: int):
     res = await user_table.is_admin(id)
     return res
 
+@app.get("/market/create")
+async def create_pos():
+    await marketpos_table.create_table()
+    return {"status": "ok"}
+
+@app.post("/market/insert")
+async def insert_table_marketpos(product_name: str, count_pos: int, price: Decimal):
+    try:
+        await marketpos_table.insert_into_table(product_name, count_pos, price)
+        return {"status": "ok"}
+    except:
+        return {"status": "false"}
+
+@app.delete("/market/del_pos")
+async def del_position(product_name: str):
+    try:
+        await marketpos_table.deleted_row(product_name)
+        return {"status": "ok"}
+    except:
+        return {"status": "false"}
+
+@app.post("/basket/create")
+async def create_basket():
+    res = {"status": True}
+    try:
+        await basket_table.create_table()
+    except:
+        res["status"] = False
+    return res
+
+@app.get("/basket/data")
+async def get_basket_data():
+    res = await basket_table.get_data()
+    return res
+
+@app.post("/basket/insert")
+async def insert_into_basket_table(userId: int, product_name: str, cur_count: int):
+    res =  await basket_table.insert_into_table(userId, product_name, cur_count)
+    return res
+
 if(__name__ == "__main__"):
     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
