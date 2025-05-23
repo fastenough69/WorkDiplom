@@ -73,5 +73,19 @@ async def insert_into_basket_table(userId: int, product_name: str, cur_count: in
     res =  await basket_table.insert_into_table(userId, product_name, cur_count)
     return res
 
+@app.post("/orders/create")
+async def create_orders():
+    res = {"status": True}
+    try:
+        await order_table.create_table()
+    except:
+        res["status"] = False
+    return res
+
+@app.post("/orders/insert")
+async def insert_into_orders_table(userId: int):
+    await order_table.insert_into_table(userId)
+    return {"status": True}
+
 if(__name__ == "__main__"):
     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)

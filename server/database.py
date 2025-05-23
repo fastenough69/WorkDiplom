@@ -58,11 +58,10 @@ class TableUsers(Table):
         await self.connect()
         async with pool.acquire() as conn:
             result = await conn.fetchval(""" SELECT (admins) FROM users WHERE id = $1  """, id)
-            await self._destroy_conn()
             return {"admin"}
 
 class TableBasket(Table):
-    def __init__(self, name_table: str="Basket"):
+    def __init__(self, name_table: str="basket"):
         super().__init__(name_table)
 
     async def create_table(self):
@@ -122,10 +121,28 @@ class TableMarketPosition(Table):
         async with pool.acquire() as conn:
             await conn.execute(""" DELETE FROM marketPos WHERE product_name = $1  """, product_name_del)
 
-class TableOrders:
-    def __init__(self):
-        pass
+class TableOrders(Table):
+    def __init__(self, name_table: str="orders"):
+        super().__init__(name_table)
+
+    async def create_table(self):
+        await self.connect()
+        async with pool.acquire() as conn:
+            await conn.execute("""
+                    CREATE TABLE IF NOT EXISTS orders (
+                    id SERIAL PRIMARY KEY, 
+                    userId INTEGER NOT NULL REFERENCES users(id),
+                    basketId INTEGER NOT NULL REFERENCES basket(id),
+                    status TEXT
+                    )
+                """)
+
+    async def insert_into_table(self, userId: int):
+        await self.connect()
+        async with pool.acquire() as conn:
+            await conn.execute(""" INSERT INTO orders (userId, basketId, status) VALUES($1, (SELECT id FROM basket WHERE basket.userId=$1 LIMIT 1), $2) """, userId, "peding")
 
 user_table = TableUsers()
 marketpos_table = TableMarketPosition()
 basket_table = TableBasket()        
+order_table = TableOrders()
