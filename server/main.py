@@ -7,6 +7,16 @@ import bcrypt
 
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Для разработки, в продакшене укажите конкретные домены
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get("/test")
 async def root():
     return {"text": "privet mir"}
@@ -45,6 +55,11 @@ async def insert_table_marketpos(product_name: str, count_pos: int, price: Decim
         return {"status": "ok"}
     except:
         return {"status": "false"}
+
+@app.get("/market/get_data")
+async def get_data_market():
+   res =  await marketpos_table.get_data()
+   return res
 
 @app.delete("/market/del_pos")
 async def del_position(product_name: str):

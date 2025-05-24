@@ -1,8 +1,7 @@
 import sys
 
 from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton
-
+from PyQt6.QtWidgets import QMainWindow, QLabel, QLineEdit, QVBoxLayout, QWidget 
 
 # Подкласс QMainWindow для настройки главного окна приложения
 class MainWindow(QMainWindow):
@@ -11,7 +10,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("My App")
         button = QPushButton("Press Me!")
-
+        self.setFixedSize(QSize(800, 600))
         # Устанавливаем центральный виджет Window.
         self.setCentralWidget(button)
 
