@@ -96,36 +96,35 @@
     </div>
 
     <script>
-        document.getElementById('login-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const phone = document.getElementById('phone').value;
-            const password = document.getElementById('password').value;
-            const errorElement = document.getElementById('error-message');
-            
-            try {
-                // В реальном приложении здесь должен быть запрос к API
-                // Это временная заглушка
-                const response = await fetch('http://localhost:8001/users/get_users');
-                const users = await response.json();
-                
-                // Имитация проверки пользователя
-                const user = users.find(u => u.name === phone);
-                
-                if (user) {
-                    // В реальном приложении здесь должна быть проверка пароля
-                    alert('Вход выполнен успешно!');
-                    window.location.href = 'index.html';
-                    // Здесь можно сохранить данные пользователя в localStorage
-                    localStorage.setItem('user', JSON.stringify(user));
-                } else {
-                    errorElement.textContent = 'Неверный номер телефона или пароль';
-                }
-            } catch (error) {
-                console.error('Ошибка входа:', error);
-                errorElement.textContent = 'Произошла ошибка при входе';
-            }
-        });
-    </script>
+    document.getElementById('login-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const phone = document.getElementById('phone').value;
+    const password = document.getElementById('password').value;
+    const errorElement = document.getElementById('error-message');
+    errorElement.textContent = '';
+    
+    try {
+        const response = await fetch(`http://localhost:8001/users/check?phone=${encodeURIComponent(phone)}&passwd=${encodeURIComponent(password)}`);
+        
+        if (!response.ok) {
+            throw new Error('Ошибка сервера');
+        }
+        
+        const result = await response.json();
+        
+        if (result.status) {
+            // Успешный вход
+            localStorage.setItem('auth', 'true');
+            localStorage.setItem('user_id', result.user_id || '');
+            window.location.href = 'index.html';
+        } else {
+            errorElement.textContent = 'Неверный номер телефона или пароль';
+        }
+    } catch (error) {
+        console.error('Ошибка входа:', error);
+        errorElement.textContent = 'Произошла ошибка при входе. Попробуйте позже.';
+    }
+});</script>
 </body>
 </html>

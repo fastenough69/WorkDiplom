@@ -4,6 +4,8 @@ import uvicorn
 import asyncio
 from database import *
 import bcrypt
+from authx import AuthX, AuthXConfig, RequestToken
+import os
 
 app = FastAPI()
 
@@ -17,9 +19,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/test")
-async def root():
-    return {"text": "privet mir"}
+config = AuthXConfig()
+config.JWT_SECRET_KEY = str(os.getenv("JWT_KEY"))
+config.JWT_TOKEN_LOCATION = ["coockie"]
+auth = AuthX(config=config)
+auth.handle_errors(app)
 
 @app.get("/users/create_table")
 async def create_table_users():
@@ -27,16 +31,22 @@ async def create_table_users():
     return {"status": "ok"}
 
 @app.post("/users/insert")
-async def insert_db(name: str, passwd: str, admin: bool):
+async def insert_db(phone: str, name: str, passwd: str, admin: bool):
     passwd = passwd.encode("utf-8")
     hashed = bcrypt.hashpw(passwd, bcrypt.gensalt())
-    await user_table.insert_into_table(name, Decimal(0), hashed, admin)
+    await user_table.insert_into_table(phone, name, Decimal(0), hashed, admin)
     return {"status": "ok"}
 
 @app.get("/users/get_users")
 async def get_all_users():
     data =  await user_table.get_data()
     return data
+
+@app.get("/users/check")
+async def check_in_table_users(phone: str, passwd: str):
+    temp = await user_table.check_user(phone, passwd)
+    res = {"status": temp}
+    return res
 
 @app.get("/users/is_admin")
 async def res_is_admin(id: int):
@@ -79,14 +89,24 @@ async def create_basket():
     return res
 
 @app.get("/basket/data")
-async def get_basket_data():
-    res = await basket_table.get_data()
+async def get_basket_data(userId: int):
+    res = await basket_table.get_data(userId)
+    return res
+
+@app.post("/basket/get_basket_user")
+async def get_basket_user(userId: int):
+    res = await basket_table.get_basket_user(userId)
     return res
 
 @app.post("/basket/insert")
 async def insert_into_basket_table(userId: int, product_name: str, cur_count: int):
     res =  await basket_table.insert_into_table(userId, product_name, cur_count)
     return res
+
+@app.delete("/basket/remove_item")
+async def remove_item_in_basket(product_name: str, userId: int):
+    await basket_table.deleted_row(product_name, userId)
+    return {"status": "ok"}
 
 @app.post("/orders/create")
 async def create_orders():

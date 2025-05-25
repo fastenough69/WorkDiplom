@@ -4,13 +4,14 @@ from decimal import Decimal
 import dotenv
 import os
 import abc
+import bcrypt
 
 pool = None
 
 class Table(abc.ABC):
     def __init__(self, name_table: str):
         self.nametable = name_table
-        
+
     async def connect(self):
         global pool
         config = {"user": "admin", "password": "856901", "database":"AppMarketAutodetails", "host": "db"}
@@ -38,14 +39,18 @@ class TableUsers(Table):
     async def create_table(self):
         await self.connect()
         async with pool.acquire() as conn:
-            await conn.execute(""" CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, name TEXT, balance numeric, password bytea, admins boolean ) """)
+            await conn.execute(""" CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, phone TEXT, balance numeric, password bytea, admins boolean ) """)
         await  self._destroy_conn()
 
-    async def insert_into_table(self, name: str, balance: Decimal, passwd: bytes, admin: bool):
+    async def insert_into_table(self, number: str, balance: Decimal, passwd: bytes, admin: bool=False):
         await self.connect()
         async with pool.acquire() as conn:
-            await conn.execute(""" INSERT INTO users (name, balance, password, admins) VALUES($1, $2, $3, $4) """, name, balance, passwd, admin)
+            await conn.execute(""" INSERT INTO users (phone, balance, password, admins) VALUES($1, $2, $3, $4) """, number, balance, passwd, admin)
         await self._destroy_conn()
+
+    # async def insert_user(number: str, passwd: bytes):
+    #     await self
+
 
     async def get_data(self) -> dict:
         await self.connect()
@@ -53,6 +58,16 @@ class TableUsers(Table):
             dicts = [dict(row) for row in await conn.fetch(""" SELECT (id, name, balance) FROM users """)]
             await self._destroy_conn()
             return dicts
+
+    async def check_user(self, phone: str, passwd: str) -> bool:
+        result = False
+        await self.connect()
+        async with pool.acquire() as conn:
+            res = await conn.fetchrow(""" SELECT phone, password FROM users WHERE phone = $1 """, phone)
+            passwd = passwd.encode("utf-8")
+            if(bcrypt.checkpw(passwd, res["password"])):
+                result = True
+            return result
 
     async def is_admin(self, id) -> bool:
         await self.connect()
@@ -81,6 +96,19 @@ class TableBasket(Table):
             dicts = [dict(row) for row in await conn.fetch(""" SELECT basket.user_count_pos, marketPos.product_name FROM basket JOIN marketPos ON marketPos.id = basket.id JOIN users ON users.id=basket.userId  """)]
         return dicts
 
+    async def get_basket_user(self, userId: int):
+        await self.connect()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch("""
+            SELECT b.user_count_pos, m.product_name 
+            FROM basket b
+            JOIN marketPos m ON m.id = b.marketPosId
+            JOIN users u ON u.id = b.userId
+            WHERE b.userId = $1
+            """, userId)
+        dicts = [dict(row) for row in rows]
+        return dicts
+
     async def insert_into_table(self, userId: int, product_name: str, cur_count: int):
         res = {"status": True}
         await self.connect()
@@ -91,11 +119,12 @@ class TableBasket(Table):
                 res["status"] = False
             return res
 
-    async def deleted_row(self, product_name: str):
+    async def deleted_row(self, product_name: str, userId: int):
         await self.connect()
         async with pool.acquire() as conn:
-            await conn.execute(""" DELETE FROM basket WHERE marketPosId IN (SELECT id FROM marketPos WHERE product_name = $1) """, product_name)
-        
+            await conn.execute(""" DELETE FROM basket WHERE marketPosId IN (SELECT id FROM marketPos WHERE product_name = $1)
+                               AND WHERE basket.userId = $2""", product_name, userId)
+
 class TableMarketPosition(Table):
     def __init__(self, name_table: str="marketPos"):
         super().__init__(name_table)
@@ -115,6 +144,7 @@ class TableMarketPosition(Table):
         async with pool.acquire() as conn:
             dicts = [dict(row) for row in await conn.fetch(""" SELECT product_name, cur_count_pos, price FROM marketPos  """)]
             return dicts
+
 
     async def deleted_row(self, product_name_del: str):
         await self.connect()

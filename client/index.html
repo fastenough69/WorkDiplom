@@ -100,77 +100,122 @@
         </div>
     </div>
 
-    <script>
-        // Загрузка товаров
-        async function loadProducts() {
-            try {
-                const response = await fetch('http://0.0.0.0:8001/market/create');
-                const data = await fetch('http://0.0.0.0:8001/market/get_data');
-                const products = await data.json();
-                
-                const container = document.getElementById('products-container');
-                container.innerHTML = '';
-                
-                products.forEach(product => {
-                    const productCard = document.createElement('div');
-                    productCard.className = 'product-card';
-                    productCard.innerHTML = `
-                        <h3>${product.product_name}</h3>
-                        <div class="price">${product.price} руб.</div>
-                        <div class="stock">В наличии: ${product.cur_count_pos} шт.</div>
-                        <button onclick="addToCart('${product.product_name}')">Добавить в корзину</button>
-                    `;
-                    container.appendChild(productCard);
-                });
-                
-                updateCartCount();
-            } catch (error) {
-                console.error('Ошибка загрузки товаров:', error);
+<script>
+    // Проверка авторизации при загрузке страницы
+    document.addEventListener('DOMContentLoaded', async () => {
+        await checkAuthStatus();
+        await loadProducts();
+        await updateCartCount();
+    });
+
+    // Проверка статуса авторизации
+    async function checkAuthStatus() {
+        try {
+            const authButtons = document.querySelector('.auth-buttons');
+            const userData = localStorage.getItem('user');
+            
+            if (userData) {
+                const user = JSON.parse(userData);
+                authButtons.innerHTML = `
+                    <span style="color: white; margin-right: 1rem;">${user.name}</span>
+                    <a href="#" class="login" onclick="logout()">Выйти</a>
+                `;
             }
+        } catch (error) {
+            console.error('Ошибка проверки авторизации:', error);
         }
-        
-        // Добавление товара в корзину
-        async function addToCart(productName) {
-            // В реальном приложении здесь должен быть ID текущего пользователя
-            const userId = 1; // временное значение
-            try {
-                const response = await fetch('http://0.0.0.0:8001/basket/insert', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        userId: userId,
-                        product_name: productName,
-                        cur_count: 1
-                    })
-                });
-                
-                const result = await response.json();
-                if (result.status) {
-                    alert('Товар добавлен в корзину!');
-                    updateCartCount();
-                } else {
-                    alert('Товар уже в корзине!');
-                }
-            } catch (error) {
-                console.error('Ошибка добавления в корзину:', error);
+    }
+
+    // Выход из системы
+    function logout() {
+        localStorage.removeItem('user');
+        window.location.reload();
+    }
+
+    // Загрузка товаров
+    async function loadProducts() {
+        try {
+            const response = await fetch('http://0.0.0.0:8001/market/get_data');
+            if (!response.ok) throw new Error('Ошибка загрузки товаров');
+            
+            const products = await response.json();
+            const container = document.getElementById('products-container');
+            container.innerHTML = '';
+            
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                productCard.innerHTML = `
+                    <h3>${product.product_name}</h3>
+                    <div class="price">${product.price} руб.</div>
+                    <div class="stock">В наличии: ${product.cur_count_pos} шт.</div>
+                    <button onclick="addToCart(${product.id}, '${product.product_name.replace(/'/g, "\\'")}')">
+                        Добавить в корзину
+                    </button>
+                `;
+                container.appendChild(productCard);
+            });
+        } catch (error) {
+            console.error('Ошибка загрузки товаров:', error);
+            alert('Не удалось загрузить товары. Попробуйте позже.');
+        }
+    }
+    
+    // Добавление товара в корзину
+    async function addToCart(productId, productName) {
+        const userData = localStorage.getItem('user');
+        if (!userData) {
+            alert('Для добавления товаров в корзину необходимо авторизоваться');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const user = JSON.parse(userData);
+        try {
+            const response = await fetch('http://0.0.0.0:8001/basket/insert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: user.id,
+                    product_name: productName,
+                    cur_count: 1
+                })
+            });
+            
+            const result = await response.json();
+            if (result.status) {
+                alert('Товар добавлен в корзину!');
+                await updateCartCount();
+            } else {
+                alert('Ошибка при добавлении товара в корзину');
             }
+        } catch (error) {
+            console.error('Ошибка добавления в корзину:', error);
+            alert('Ошибка при добавлении товара в корзину');
         }
-        
-        // Обновление счетчика корзины
-        async function updateCartCount() {
-            try {
-                const response = await fetch('http://0.0.0.0:8001/basket/data');
-                const data = await response.json();
-                document.getElementById('cart-count').textContent = data.length || 0;
-            } catch (error) {
-                console.error('Ошибка обновления корзины:', error);
-            }
+    }
+    
+    // Обновление счетчика корзины
+    async function updateCartCount() {
+        const userData = localStorage.getItem('user');
+        if (!userData) {
+            document.getElementById('cart-count').textContent = 0;
+            return;
         }
-        
-        // Загрузка при старте
-        document.addEventListener('DOMContentLoaded', loadProducts);
-    </script>
+
+        const user = JSON.parse(userData);
+        try {
+            const response = await fetch(`http://0.0.0.0:8001/basket/get_basket_user?userId=${user.id}`);
+            if (!response.ok) throw new Error('Ошибка загрузки корзины');
+            
+            const data = await response.json();
+            document.getElementById('cart-count').textContent = data.length || 0;
+        } catch (error) {
+            console.error('Ошибка обновления корзины:', error);
+        }
+    }
+</script>
 </body>
 </html>
