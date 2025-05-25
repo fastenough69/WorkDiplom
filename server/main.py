@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 import uvicorn
 import asyncio
 from database import *
@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Для разработки, в продакшене укажите конкретные домены
+    allow_origins=["http://0.0.0.0", "http://localhost", "null"],  # Для разработки, в продакшене укажите конкретные домены
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,10 +31,10 @@ async def create_table_users():
     return {"status": "ok"}
 
 @app.post("/users/insert")
-async def insert_db(phone: str, name: str, passwd: str, admin: bool):
+async def insert_db(phone: str, passwd: str, admin: bool=False):
     passwd = passwd.encode("utf-8")
     hashed = bcrypt.hashpw(passwd, bcrypt.gensalt())
-    await user_table.insert_into_table(phone, name, Decimal(0), hashed, admin)
+    await user_table.insert_into_table(phone, Decimal(0), hashed, admin)
     return {"status": "ok"}
 
 @app.get("/users/get_users")
@@ -43,10 +43,17 @@ async def get_all_users():
     return data
 
 @app.get("/users/check")
-async def check_in_table_users(phone: str, passwd: str):
+async def check_in_table_users(phone: str, passwd: str, response: Response):
     temp = await user_table.check_user(phone, passwd)
-    res = {"status": temp}
-    return res
+    if(temp):
+        token = auth.create_access_token(uid=phone)
+        response.set_cookie(key="access-token",
+                             value=token,
+                             httponly=True,
+                             samesite="Lax",
+                             max_age=3600
+                             )
+        return {"success": True}
 
 @app.get("/users/is_admin")
 async def res_is_admin(id: int):

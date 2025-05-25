@@ -112,23 +112,34 @@
     async function checkAuthStatus() {
         try {
             const authButtons = document.querySelector('.auth-buttons');
-            const userData = localStorage.getItem('user');
+            const token = getCookie('access-token');
             
-            if (userData) {
-                const user = JSON.parse(userData);
-                authButtons.innerHTML = `
-                    <span style="color: white; margin-right: 1rem;">${user.name}</span>
-                    <a href="#" class="login" onclick="logout()">Выйти</a>
-                `;
+            if (token) {
+                // Здесь можно добавить проверку токена через API, если нужно
+                const userPhone = localStorage.getItem('userPhone');
+                if (userPhone) {
+                    authButtons.innerHTML = `
+                        <span style="color: white; margin-right: 1rem;">${userPhone}</span>
+                        <a href="#" class="login" onclick="logout()">Выйти</a>
+                    `;
+                }
             }
         } catch (error) {
             console.error('Ошибка проверки авторизации:', error);
         }
     }
 
+    // Функция для получения cookie
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
     // Выход из системы
     function logout() {
-        localStorage.removeItem('user');
+        document.cookie = 'access-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        localStorage.removeItem('userPhone');
         window.location.reload();
     }
 
@@ -148,7 +159,7 @@
                 productCard.innerHTML = `
                     <h3>${product.product_name}</h3>
                     <div class="price">${product.price} руб.</div>
-                    <div class="stock">В наличии: ${product.cur_count_pos} шт.</div>
+                    <div class="stock">В наличии: ${product.count_pos} шт.</div>
                     <button onclick="addToCart(${product.id}, '${product.product_name.replace(/'/g, "\\'")}')">
                         Добавить в корзину
                     </button>
@@ -163,22 +174,28 @@
     
     // Добавление товара в корзину
     async function addToCart(productId, productName) {
-        const userData = localStorage.getItem('user');
-        if (!userData) {
+        const token = getCookie('access-token');
+        if (!token) {
             alert('Для добавления товаров в корзину необходимо авторизоваться');
             window.location.href = 'login.html';
             return;
         }
 
-        const user = JSON.parse(userData);
+        const userPhone = localStorage.getItem('userPhone');
+        if (!userPhone) {
+            alert('Ошибка идентификации пользователя');
+            return;
+        }
+
         try {
             const response = await fetch('http://0.0.0.0:8001/basket/insert', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    userId: user.id,
+                    userId: userPhone, // В вашем API используется phone как идентификатор
                     product_name: productName,
                     cur_count: 1
                 })
@@ -199,15 +216,30 @@
     
     // Обновление счетчика корзины
     async function updateCartCount() {
-        const userData = localStorage.getItem('user');
-        if (!userData) {
+        const token = getCookie('access-token');
+        if (!token) {
             document.getElementById('cart-count').textContent = 0;
             return;
         }
 
-        const user = JSON.parse(userData);
+        const userPhone = localStorage.getItem('userPhone');
+        if (!userPhone) {
+            document.getElementById('cart-count').textContent = 0;
+            return;
+        }
+
         try {
-            const response = await fetch(`http://0.0.0.0:8001/basket/get_basket_user?userId=${user.id}`);
+            const response = await fetch(`http://0.0.0.0:8001/basket/get_basket_user`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    userId: userPhone
+                })
+            });
+            
             if (!response.ok) throw new Error('Ошибка загрузки корзины');
             
             const data = await response.json();

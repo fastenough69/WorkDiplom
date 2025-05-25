@@ -42,7 +42,7 @@ class TableUsers(Table):
             await conn.execute(""" CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, phone TEXT, balance numeric, password bytea, admins boolean ) """)
         await  self._destroy_conn()
 
-    async def insert_into_table(self, number: str, balance: Decimal, passwd: bytes, admin: bool=False):
+    async def insert_into_table(self, number: str, balance: Decimal, passwd: bytes, admin: bool):
         await self.connect()
         async with pool.acquire() as conn:
             await conn.execute(""" INSERT INTO users (phone, balance, password, admins) VALUES($1, $2, $3, $4) """, number, balance, passwd, admin)
