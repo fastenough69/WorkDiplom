@@ -48,9 +48,13 @@ class TableUsers(Table):
             await conn.execute(""" INSERT INTO users (phone, balance, password, admins) VALUES($1, $2, $3, $4) """, number, balance, passwd, admin)
         await self._destroy_conn()
 
-    # async def insert_user(number: str, passwd: bytes):
-    #     await self
-
+    async def get_id_user(self, phone: str):
+        await self.connect()
+        async with pool.acquire() as conn:
+            _id = await conn.fetchval(""" SELECT id FROM users WHERE phone = $1 """, phone)
+            if(phone):
+                return _id
+            return False
 
     async def get_data(self) -> dict:
         await self.connect()

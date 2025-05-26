@@ -42,6 +42,11 @@ async def get_all_users():
     data =  await user_table.get_data()
     return data
 
+@app.get("/users/get_id")
+async def get_user_id(phone: str):
+    res = await user_table.get_id_user(phone)
+    return {"id": res}
+
 @app.get("/users/check")
 async def check_in_table_users(phone: str, passwd: str, response: Response):
     temp = await user_table.check_user(phone, passwd)
