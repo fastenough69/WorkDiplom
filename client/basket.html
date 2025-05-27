@@ -1,217 +1,272 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Автозапчасти - Корзина</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        header {
-            background-color: #333;
-            color: white;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1rem;
-        }
-        .cart-items {
-            background: white;
-            border-radius: 5px;
-            padding: 1rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .cart-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 0;
-            border-bottom: 1px solid #eee;
-        }
-        .cart-item:last-child {
-            border-bottom: none;
-        }
-        .cart-item-info {
-            flex-grow: 1;
-        }
-        .cart-item-actions {
-            display: flex;
-            align-items: center;
-        }
-        .cart-item-actions button {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 3px;
-            cursor: pointer;
-            margin-left: 1rem;
-        }
-        .cart-item-actions button:hover {
-            background-color: #c0392b;
-        }
-        .cart-total {
-            text-align: right;
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-top: 1rem;
-        }
-        .checkout-btn {
-            background-color: #2ecc71;
-            color: white;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 1rem;
-            margin-top: 1rem;
-            float: right;
-        }
-        .checkout-btn:hover {
-            background-color: #27ae60;
-        }
-        .back-link {
-            display: inline-block;
-            margin-top: 1rem;
-            color: #3498db;
-            text-decoration: none;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+      }
+      header {
+        background-color: #333;
+        color: white;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+      .cart-items {
+        background: white;
+        border-radius: 5px;
+        padding: 1rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .cart-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #eee;
+      }
+      .cart-item:last-child {
+        border-bottom: none;
+      }
+      .cart-item-info {
+        flex-grow: 1;
+      }
+      .cart-item-actions {
+        display: flex;
+        align-items: center;
+      }
+      .cart-item-actions button {
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 3px;
+        cursor: pointer;
+        margin-left: 1rem;
+      }
+      .cart-item-actions button:hover {
+        background-color: #c0392b;
+      }
+      .cart-total {
+        text-align: right;
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-top: 1rem;
+      }
+      .checkout-btn {
+        background-color: #2ecc71;
+        color: white;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 1rem;
+        margin-top: 1rem;
+        float: right;
+      }
+      .checkout-btn:hover {
+        background-color: #27ae60;
+      }
+      .back-link {
+        display: inline-block;
+        margin-top: 1rem;
+        color: #3498db;
+        text-decoration: none;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <header>
-        <h1>Автозапчасти</h1>
-        <div>
-            <a href="index.html" class="cart-link">Назад в каталог</a>
-        </div>
+      <h1>Автозапчасти</h1>
+      <div>
+        <a href="index.html" class="cart-link">Назад в каталог</a>
+        <span id="auth-section" style="margin-left: 1rem;"></span>
+      </div>
     </header>
 
     <div class="container">
-        <h2>Ваша корзина</h2>
-        <div class="cart-items" id="cart-items-container">
-            <!-- Товары в корзине будут загружены через JavaScript -->
-        </div>
-        <div class="cart-total">
-            Общая сумма: <span id="total-price">0</span> руб.
-        </div>
-        <button class="checkout-btn">Оформить заказ</button>
-        <a href="index.html" class="back-link">← Вернуться к покупкам</a>
+      <h2>Ваша корзина</h2>
+      <div class="cart-items" id="cart-items-container">
+        <!-- Товары в корзине будут загружены через JavaScript -->
+      </div>
+      <div class="cart-total">
+        Общая сумма: <span id="total-price">0</span> руб.
+      </div>
+      <button class="checkout-btn">Оформить заказ</button>
+      <a href="index.html" class="back-link">← Вернуться к покупкам</a>
     </div>
 
     <script>
-        // Загрузка корзины
-        async function loadCart() {
-            try {
-                const response = await fetch('http://localhost:8001/basket/data');
-                const items = await response.json();
-                
-                const container = document.getElementById('cart-items-container');
-                container.innerHTML = '';
-                
-                let total = 0;
-                
-                if (items.length === 0) {
-                    container.innerHTML = '<p>Ваша корзина пуста</p>';
-                    document.getElementById('total-price').textContent = '0';
-                    return;
-                }
-                
-                // Для каждого товара нужно получить цену (это временное решение)
-                const productsResponse = await fetch('http://localhost:8001/market/get_data');
-                const products = await productsResponse.json();
-                
-                items.forEach(item => {
-                    const product = products.find(p => p.product_name === item.product_name);
-                    if (product) {
-                        const itemTotal = product.price * item.user_count_pos;
-                        total += itemTotal;
-                        
-                        const itemElement = document.createElement('div');
-                        itemElement.className = 'cart-item';
-                        itemElement.innerHTML = `
-                            <div class="cart-item-info">
-                                <h3>${item.product_name}</h3>
-                                <div>Количество: ${item.user_count_pos}</div>
-                                <div>Цена: ${product.price} руб. × ${item.user_count_pos} = ${itemTotal} руб.</div>
-                            </div>
-                            <div class="cart-item-actions">
-                                <button onclick="removeFromCart('${item.product_name}')">Удалить</button>
-                            </div>
-                        `;
-                        container.appendChild(itemElement);
-                    }
-                });
-                
-                document.getElementById('total-price').textContent = total;
-            } catch (error) {
-                console.error('Ошибка загрузки корзины:', error);
-            }
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+      }
+
+      function logout() {
+        document.cookie = 'access-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        localStorage.removeItem('userPhone');
+        window.location.reload();
+      }
+
+      function updateAuthSection() {
+        const authSection = document.getElementById('auth-section');
+        const token = getCookie('access-token');
+        const userPhone = localStorage.getItem('userPhone');
+
+        if (token && userPhone) {
+          authSection.innerHTML = `<span style="color: white;">${userPhone}</span>
+                                   <a href="#" onclick="logout()" style="margin-left: 1rem; color: #e74c3c;">Выйти</a>`;
         }
-        
-        // Удаление товара из корзины
-        async function removeFromCart(productName) {
-            try {
-                const response = await fetch('http://localhost:8001/basket/deleted_row', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        product_name: productName
-                    })
-                });
-                
-                const result = await response.json();
-                if (result.status) {
-                    alert('Товар удален из корзины!');
-                    loadCart();
-                }
-            } catch (error) {
-                console.error('Ошибка удаления из корзины:', error);
+      }
+
+      async function loadCart() {
+        try {
+          const token = getCookie('access-token');
+          if (!token) {
+            window.location.href = 'login.html';
+            return;
+          }
+
+          const userPhone = localStorage.getItem('userPhone');
+          if (!userPhone) {
+            alert('Ошибка идентификации пользователя');
+            return;
+          }
+
+          const idResponse = await fetch(`http://localhost:8001/users/get_id?phone=${encodeURIComponent(userPhone)}`);
+          const idData = await idResponse.json();
+          const userId = idData.id;
+
+          const response = await fetch(`http://localhost:8001/basket/get_basket_user?userId=${userId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
             }
-        }
-        
-        // Оформление заказа
-        async function checkout() {
-            // В реальном приложении здесь должен быть ID текущего пользователя
-            const userId = 1; // временное значение
-            try {
-                const response = await fetch('http://localhost:8001/orders/insert', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        userId: userId
-                    })
-                });
-                
-                const result = await response.json();
-                if (result.status) {
-                    alert('Заказ оформлен!');
-                    loadCart();
-                }
-            } catch (error) {
-                console.error('Ошибка оформления заказа:', error);
+          });
+          const items = await response.json();
+
+          const container = document.getElementById('cart-items-container');
+          container.innerHTML = '';
+
+          let total = 0;
+
+          if (items.length === 0) {
+            container.innerHTML = '<p>Ваша корзина пуста</p>';
+            document.getElementById('total-price').textContent = '0';
+            return;
+          }
+
+          const productsResponse = await fetch('http://localhost:8001/market/get_data');
+          const products = await productsResponse.json();
+
+          items.forEach(item => {
+            const product = products.find(p => p.product_name === item.product_name);
+            if (product) {
+              const itemTotal = product.price * item.user_count_pos;
+              total += itemTotal;
+
+              const itemElement = document.createElement('div');
+              itemElement.className = 'cart-item';
+              itemElement.innerHTML = `
+                <div class="cart-item-info">
+                    <h3>${item.product_name}</h3>
+                    <div>Количество: ${item.user_count_pos}</div>
+                    <div>Цена: ${product.price} руб. × ${item.user_count_pos} = ${itemTotal} руб.</div>
+                </div>
+                <div class="cart-item-actions">
+                    <button onclick="removeFromCart('${item.product_name}', ${userId})">Удалить</button>
+                </div>
+              `;
+              container.appendChild(itemElement);
             }
+          });
+
+          document.getElementById('total-price').textContent = total;
+        } catch (error) {
+          console.error('Ошибка загрузки корзины:', error);
         }
-        
-        // Назначение обработчика кнопки оформления заказа
-        document.addEventListener('DOMContentLoaded', () => {
+      }
+
+      async function removeFromCart(productName, userId) {
+        try {
+          const token = getCookie('access-token');
+          if (!token) {
+            window.location.href = 'login.html';
+            return;
+          }
+
+          const response = await fetch(`http://localhost:8001/basket/remove_item?product_name=${encodeURIComponent(productName)}&userId=${userId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          const result = await response.json();
+          if (result.status === "ok") {
+            alert('Товар удален из корзины!');
             loadCart();
-            
-            const checkoutBtn = document.querySelector('.checkout-btn');
-            checkoutBtn.addEventListener('click', checkout);
-        });
+          }
+        } catch (error) {
+          console.error('Ошибка удаления из корзины:', error);
+        }
+      }
+
+      async function checkout() {
+        try {
+          const token = getCookie('access-token');
+          if (!token) {
+            window.location.href = 'login.html';
+            return;
+          }
+
+          const userPhone = localStorage.getItem('userPhone');
+          if (!userPhone) {
+            alert('Ошибка идентификации пользователя');
+            return;
+          }
+
+          const idResponse = await fetch(`http://localhost:8001/users/get_id?phone=${encodeURIComponent(userPhone)}`);
+          const idData = await idResponse.json();
+          const userId = idData.id;
+
+          const response = await fetch('http://localhost:8001/orders/insert', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ userId })
+          });
+
+          const result = await response.json();
+          if (result.status) {
+            alert('Заказ оформлен!');
+            loadCart();
+          }
+        } catch (error) {
+          console.error('Ошибка оформления заказа:', error);
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        updateAuthSection();
+        loadCart();
+        document.querySelector('.checkout-btn').addEventListener('click', checkout);
+      });
     </script>
-</body>
+  </body>
 </html>
+

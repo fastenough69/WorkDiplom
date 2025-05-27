@@ -18,7 +18,7 @@
         .login-container {
             background: white;
             border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(localhost.1);
             padding: 2rem;
             width: 100%;
             max-width: 400px;
@@ -106,19 +106,39 @@ document.getElementById('login-form').addEventListener('submit', async function(
     
     try {
         const response = await fetch(
-            `http://0.0.0.0:8001/users/check?phone=${encodeURIComponent(phone)}&passwd=${encodeURIComponent(password)}`, 
+            `http://localhost:8001/users/check?phone=${encodeURIComponent(phone)}&passwd=${encodeURIComponent(password)}`, 
             {
                 method: 'GET',
-                credentials: 'include'  // важно для куки
+                credentials: 'include'
             }
         );
 
         const result = await response.json();
 
         if (result.success) {
+            // Сохраняем номер телефона
             localStorage.setItem('userPhone', phone);
-            window.location.href = 'index.html';
-        } else {
+
+            // Получаем userId
+            const idResponse = await fetch(
+                `http://localhost:8001/users/get_id?phone=${encodeURIComponent(phone)}`,
+                {
+                    method: 'GET',
+                    credentials: 'include'
+                }
+            );
+
+            const idResult = await idResponse.json();
+
+            if (idResult.id !== undefined) {
+                localStorage.setItem('userId', idResult.id);
+            } else {
+                console.warn('Не удалось получить userId');
+            }
+
+           setTimeout(() => {
+            window.location.href = "index.html";
+        }, 300); } else {
             errorElement.textContent = 'Неверный номер телефона или пароль';
         }
     } catch (error) {
@@ -126,5 +146,6 @@ document.getElementById('login-form').addEventListener('submit', async function(
         errorElement.textContent = error.message || 'Ошибка сервера';
     }
 });
-</script></body>
+</script>
+</body>
 </html>

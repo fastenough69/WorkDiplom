@@ -1,253 +1,301 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Автозапчасти - Каталог</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        header {
-            background-color: #333;
-            color: white;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1rem;
-        }
-        .products {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1rem;
-        }
-        .product-card {
-            background: white;
-            border-radius: 5px;
-            padding: 1rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .product-card h3 {
-            margin-top: 0;
-        }
-        .product-card .price {
-            font-weight: bold;
-            color: #e67e22;
-            font-size: 1.2rem;
-        }
-        .product-card .stock {
-            color: #27ae60;
-        }
-        .product-card button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 3px;
-            cursor: pointer;
-            margin-top: 0.5rem;
-        }
-        .product-card button:hover {
-            background-color: #2980b9;
-        }
-        .auth-buttons a {
-            color: white;
-            text-decoration: none;
-            margin-left: 1rem;
-            padding: 0.5rem 1rem;
-            border-radius: 3px;
-        }
-        .auth-buttons a.login {
-            background-color: #3498db;
-        }
-        .auth-buttons a.register {
-            background-color: #2ecc71;
-        }
-        .cart-link {
-            color: white;
-            text-decoration: none;
-            margin-left: 1rem;
-            padding: 0.5rem 1rem;
-            background-color: #e67e22;
-            border-radius: 3px;
-        }
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+}
+      header {
+        background-color: #333;
+        color: white;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+      .products {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+      }
+      .product-card {
+        background: white;
+        border-radius: 5px;
+        padding: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+      .product-card h3 {
+        margin-top: 0;
+      }
+      .product-card .price {
+        font-weight: bold;
+        color: #e67e22;
+        font-size: 1.2rem;
+      }
+      .product-card .stock {
+        color: #27ae60;
+      }
+      .product-card button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 3px;
+        cursor: pointer;
+        margin-top: 0.5rem;
+      }
+      .product-card button:hover {
+        background-color: #2980b9;
+      }
+      .auth-buttons a {
+        color: white;
+        text-decoration: none;
+        margin-left: 1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 3px;
+      }
+      .auth-buttons a.login {
+        background-color: #3498db;
+      }
+      .auth-buttons a.register {
+        background-color: #2ecc71;
+      }
+      .cart-link {
+        color: white;
+        text-decoration: none;
+        margin-left: 1rem;
+        padding: 0.5rem 1rem;
+        background-color: #e67e22;
+        border-radius: 3px;
+      }
+      .quantity-selector {
+        display: flex;
+        align-items: center;
+        margin: 0.5rem 0;
+      }
+      .quantity-selector input {
+        width: 50px;
+        padding: 0.3rem;
+        text-align: center;
+        margin: 0 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+      }
+      .quantity-selector button {
+        background-color: #ddd;
+        color: #333;
+        border: none;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border-radius: 3px;
+      }
+      .quantity-selector button:hover {
+        background-color: #ccc;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <header>
-        <h1>Автозапчасти</h1>
-        <div>
-            <a href="basket.html" class="cart-link">Корзина (<span id="cart-count">0</span>)</a>
-            <div class="auth-buttons">
-                <a href="login.html" class="login">Вход</a>
-                <a href="register.html" class="register">Регистрация</a>
-            </div>
-        </div>
+      <h1>Автозапчасти</h1>
+      <div style="display: flex; align-items: center;">
+        <a href="basket.html" class="cart-link">Корзина (<span id="cart-count">0</span>)</a>
+        <div class="auth-buttons" id="auth-buttons"></div>
+      </div>
     </header>
 
     <div class="container">
-        <h2>Каталог товаров</h2>
-        <div class="products" id="products-container">
-            <!-- Товары будут загружены через JavaScript -->
-        </div>
+      <h2>Каталог товаров</h2>
+      <div class="products" id="products-container">
+        <!-- Товары будут загружены через JavaScript -->
+      </div>
     </div>
 
-<script>
-    // Проверка авторизации при загрузке страницы
-    document.addEventListener('DOMContentLoaded', async () => {
+    <script>
+      document.addEventListener('DOMContentLoaded', async () => {
         await checkAuthStatus();
         await loadProducts();
         await updateCartCount();
-    });
+      });
 
-    // Проверка статуса авторизации
-    async function checkAuthStatus() {
+      async function checkAuthStatus() {
         try {
-            const authButtons = document.querySelector('.auth-buttons');
-            const token = getCookie('access-token');
-            
-            if (token) {
-                // Здесь можно добавить проверку токена через API, если нужно
-                const userPhone = localStorage.getItem('userPhone');
-                if (userPhone) {
-                    authButtons.innerHTML = `
-                        <span style="color: white; margin-right: 1rem;">${userPhone}</span>
-                        <a href="#" class="login" onclick="logout()">Выйти</a>
-                    `;
-                }
-            }
+          const authButtons = document.getElementById('auth-buttons');
+          const token = getCookie('access-token');
+          const userPhone = localStorage.getItem('userPhone');
+          console.log('token:', token)
+
+          if (token && userPhone) {
+            authButtons.innerHTML = `
+              <span style="color: white; margin-left: 1rem;">${userPhone}</span>
+              <a href="#" class="login" onclick="logout()">Выйти</a>
+            `;
+          } else {
+            authButtons.innerHTML = `
+              <a href="login.html" class="login">Вход</a>
+              <a href="register.html" class="register">Регистрация</a>
+            `;
+          }
         } catch (error) {
-            console.error('Ошибка проверки авторизации:', error);
+          console.error('Ошибка проверки авторизации:', error);
         }
-    }
+      }
 
-    // Функция для получения cookie
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-    }
+      function getCookie(name) {
+        // Получаем все куки в виде массива
+        const cookies = document.cookie.split(';');
 
-    // Выход из системы
-    function logout() {
+        // Ищем нужную куку
+        for (let cookie of cookies) {
+          // Удаляем пробелы в начале и конце
+          const trimmedCookie = cookie.trim();
+
+          // Проверяем начало строки на совпадение с именем куки
+          if (trimmedCookie.startsWith(`${name}=`)) {
+            // Декодируем значение и возвращаем
+            return decodeURIComponent(
+              trimmedCookie.substring(name.length + 1)
+            );
+          }
+        }
+
+        // Если кука не найдена
+        return null;
+      }
+      function logout() {
         document.cookie = 'access-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
         localStorage.removeItem('userPhone');
+        localStorage.removeItem('userId');
         window.location.reload();
-    }
+      }
 
-    // Загрузка товаров
-    async function loadProducts() {
+      async function loadProducts() {
         try {
-            const response = await fetch('http://0.0.0.0:8001/market/get_data');
-            if (!response.ok) throw new Error('Ошибка загрузки товаров');
-            
-            const products = await response.json();
-            const container = document.getElementById('products-container');
-            container.innerHTML = '';
-            
-            products.forEach(product => {
-                const productCard = document.createElement('div');
-                productCard.className = 'product-card';
-                productCard.innerHTML = `
-                    <h3>${product.product_name}</h3>
-                    <div class="price">${product.price} руб.</div>
-                    <div class="stock">В наличии: ${product.count_pos} шт.</div>
-                    <button onclick="addToCart(${product.id}, '${product.product_name.replace(/'/g, "\\'")}')">
-                        Добавить в корзину
-                    </button>
+          const response = await fetch('http://localhost:8001/market/get_data');
+          if (!response.ok) throw new Error('Ошибка загрузки товаров');
+          const products = await response.json();
+          const container = document.getElementById('products-container');
+          container.innerHTML = '';
+
+          products.forEach(product => {
+            const productCard = document.createElement('div');
+            productCard.className = 'product-card';
+            productCard.innerHTML = `
+              <h3>${product.product_name}</h3>
+              <div class="price">${product.price} руб.</div>
+              <div class="stock">В наличии: ${product.cur_count_pos} шт.</div>
+              <div class="quantity-selector">
+                <button onclick="changeQuantity(this, -1, ${product.cur_count_pos})">-</button>
+                <input type="number" id="quantity-${product.id}" value="1" min="1" max="${product.cur_count_pos}" onchange="validateQuantity(this, ${product.cur_count_pos})">
+                <button onclick="changeQuantity(this, 1, ${product.cur_count_pos})">+</button>
+              </div>
+              <button onclick="addToCart(${product.id}, '${product.product_name.replace(/'/g, "\\'")}', ${product.cur_count_pos})">
+                Добавить в корзину
+                </button>
                 `;
-                container.appendChild(productCard);
-            });
+            container.appendChild(productCard);
+          });
         } catch (error) {
-            console.error('Ошибка загрузки товаров:', error);
-            alert('Не удалось загрузить товары. Попробуйте позже.');
+          console.error('Ошибка загрузки товаров:', error);
+          alert('Не удалось загрузить товары. Попробуйте позже.');
         }
-    }
-    
-    // Добавление товара в корзину
-    async function addToCart(productId, productName) {
-        const token = getCookie('access-token');
-        if (!token) {
-            alert('Для добавления товаров в корзину необходимо авторизоваться');
-            window.location.href = 'login.html';
-            return;
-        }
+      }
 
-        const userPhone = localStorage.getItem('userPhone');
-        if (!userPhone) {
-            alert('Ошибка идентификации пользователя');
-            return;
+      function changeQuantity(button, delta, maxQuantity) {
+        const input = button.parentElement.querySelector('input');
+        let newValue = parseInt(input.value) + delta;
+
+        if (newValue < 1) newValue = 1;
+        if (newValue > maxQuantity) newValue = maxQuantity;
+
+        input.value = newValue;
+      }
+
+      function validateQuantity(input, maxQuantity) {
+        let value = parseInt(input.value);
+
+        if (isNaN(value) || value < 1) {
+          input.value = 1;
+        } else if (value > maxQuantity) {
+          input.value = maxQuantity;
+        }
+      }
+
+      async function updateCartCount() {
+        const token = getCookie('access-token');
+        const userId = localStorage.getItem('userId');
+        if (!token || !userId) {
+          document.getElementById('cart-count').textContent = 0;
+          return;
         }
 
         try {
-            const response = await fetch('http://0.0.0.0:8001/basket/insert', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    userId: userPhone, // В вашем API используется phone как идентификатор
-                    product_name: productName,
-                    cur_count: 1
-                })
-            });
-            
-            const result = await response.json();
-            if (result.status) {
-                alert('Товар добавлен в корзину!');
-                await updateCartCount();
-            } else {
-                alert('Ошибка при добавлении товара в корзину');
+          const response = await fetch(`http://localhost:8001/basket/get_basket_user?userId=${userId}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`
             }
-        } catch (error) {
-            console.error('Ошибка добавления в корзину:', error);
-            alert('Ошибка при добавлении товара в корзину');
-        }
-    }
-    
-    // Обновление счетчика корзины
-    async function updateCartCount() {
-        const token = getCookie('access-token');
-        if (!token) {
-            document.getElementById('cart-count').textContent = 0;
-            return;
-        }
+          });
 
-        const userPhone = localStorage.getItem('userPhone');
-        if (!userPhone) {
-            document.getElementById('cart-count').textContent = 0;
-            return;
-        }
+                if (!response.ok) throw new Error('Ошибка загрузки корзины');
+                const data = await response.json();
+                document.getElementById('cart-count').textContent = data.length || 0;
+              } catch (error) {
+                console.error('Ошибка обновления корзины:', error);
+              }
+          }
 
-        try {
-            const response = await fetch(`http://0.0.0.0:8001/basket/get_basket_user`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
+            async function addToCart(productId, productName, maxQuantity) {
+              const token = getCookie('access-token');
+              const userId = localStorage.getItem('userId');
+              const quantityInput = document.getElementById(`quantity-${productId}`);
+              let quantity = parseInt(quantityInput.value);
+
+              // Проверка корректности количества
+              if (isNaN(quantity)) quantity = 1;
+              if (quantity < 1) quantity = 1;
+              if (quantity > maxQuantity) quantity = maxQuantity;
+
+              if (!token || !userId) {
+                alert('Для добавления товаров в корзину необходимо авторизоваться');
+                window.location.href = 'login.html';
+                return;
+              }
+
+              try {
+                const response = await fetch(`http://localhost:8001/basket/insert?userId=${userId}&product_name=${encodeURIComponent(productName)}&cur_count=${quantity}`, {
+                  method: 'POST',
+                  headers: {
                     'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    userId: userPhone
-                })
-            });
-            
-            if (!response.ok) throw new Error('Ошибка загрузки корзины');
-            
-            const data = await response.json();
-            document.getElementById('cart-count').textContent = data.length || 0;
-        } catch (error) {
-            console.error('Ошибка обновления корзины:', error);
-        }
-    }
-</script>
-</body>
+                  }
+                });
+
+                const result = await response.json();
+                if (result.status) {
+                  alert(`Товар добавлен в корзину (${quantity} шт.)!`);
+                  await updateCartCount();
+                } else {
+                  alert('Ошибка при добавлении товара в корзину');
+                }
+              } catch (error) {
+                console.error('Ошибка добавления в корзину:', error);
+                alert('Ошибка при добавлении товара в корзину');
+              }
+            }
+    </script>
+  </body>
 </html>

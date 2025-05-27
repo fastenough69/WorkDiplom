@@ -4,6 +4,7 @@ import uvicorn
 import asyncio
 from database import *
 import bcrypt
+from decimal import Decimal
 from authx import AuthX, AuthXConfig, RequestToken
 import os
 
@@ -13,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://0.0.0.0", "http://localhost", "null"],  # Для разработки, в продакшене укажите конкретные домены
+    allow_origins=["http://0.0.0.0:8002", "http://localhost:8002"],  # Для разработки, в продакшене укажите конкретные домены
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,9 +22,21 @@ app.add_middleware(
 
 config = AuthXConfig()
 config.JWT_SECRET_KEY = str(os.getenv("JWT_KEY"))
-config.JWT_TOKEN_LOCATION = ["coockie"]
+config.JWT_TOKEN_LOCATION = ["cookie"]
 auth = AuthX(config=config)
 auth.handle_errors(app)
+
+@app.on_event("startup")
+async def startup():
+    await connect()
+
+@app.on_event("shutdown")
+async def shutdown():
+    await destroy_conn()
+
+@app.get("/health")
+async def check_health():
+    ...
 
 @app.get("/users/create_table")
 async def create_table_users():
@@ -48,17 +61,20 @@ async def get_user_id(phone: str):
     return {"id": res}
 
 @app.get("/users/check")
-async def check_in_table_users(phone: str, passwd: str, response: Response):
+async def check_in_table_users(phone: str, passwd: str):
     temp = await user_table.check_user(phone, passwd)
     if(temp):
         token = auth.create_access_token(uid=phone)
+        response = JSONResponse(content={"success": True})
         response.set_cookie(key="access-token",
                              value=token,
-                             httponly=True,
+                             httponly=False,
                              samesite="Lax",
-                             max_age=3600
+                             path="/",
+                             max_age=3600,
+                             secure=False,
                              )
-        return {"success": True}
+        return response
 
 @app.get("/users/is_admin")
 async def res_is_admin(id: int):
@@ -101,11 +117,11 @@ async def create_basket():
     return res
 
 @app.get("/basket/data")
-async def get_basket_data(userId: int):
-    res = await basket_table.get_data(userId)
+async def get_basket_data():
+    res = await basket_table.get_data()
     return res
 
-@app.post("/basket/get_basket_user")
+@app.get("/basket/get_basket_user")
 async def get_basket_user(userId: int):
     res = await basket_table.get_basket_user(userId)
     return res
