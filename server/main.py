@@ -87,9 +87,9 @@ async def create_pos():
     return {"status": "ok"}
 
 @app.post("/market/insert")
-async def insert_table_marketpos(product_name: str, count_pos: int, price: Decimal):
+async def insert_table_marketpos(product_name: str, description: str, count_pos: int, price: Decimal):
     try:
-        await marketpos_table.insert_into_table(product_name, count_pos, price)
+        await marketpos_table.insert_into_table(product_name, description, count_pos, price)
         return {"status": "ok"}
     except:
         return {"status": "false"}
@@ -107,7 +107,15 @@ async def del_position(product_name: str):
     except:
         return {"status": "false"}
 
-@app.post("/basket/create")
+@app.put("/market/up_quanity")
+async def up_quanity_market(product_name: str, new_quianity: int):
+    try:
+        await marketpos_table.change_quanity(product_name, new_quianity)
+        return {"status": True}
+    except:
+        return {"status": False}
+
+@app.get("/basket/create")
 async def create_basket():
     res = {"status": True}
     try:
@@ -135,6 +143,15 @@ async def insert_into_basket_table(userId: int, product_name: str, cur_count: in
 async def remove_item_in_basket(product_name: str, userId: int):
     await basket_table.deleted_row(product_name, userId)
     return {"status": "ok"}
+
+@app.put("/basket/change_count_pos")
+async def change_count_pos(userId: int, new_count_pos: int):
+    try:
+        await basket_table.change_quanity(userId, new_count_pos)
+        return {"status": True}
+    except:
+        return {"status": False}
+    
 
 @app.post("/orders/create")
 async def create_orders():

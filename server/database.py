@@ -130,6 +130,10 @@ class TableBasket(Table):
             await conn.execute(""" DELETE FROM basket WHERE marketPosId IN (SELECT id FROM marketPos WHERE product_name = $1)
                                AND basket.userId = $2""", product_name, userId)
 
+    async def change_quanity(self, userId: int, new_count_pos: int):
+        async with pool.acquire() as conn:
+            await conn.execute(""" UPDATE basket SET user_count_pos = $1  WHERE userId IN (SELECT id FROM users WHERE id = $2) """, new_count_pos, userId)
+
 class TableMarketPosition(Table):
     def __init__(self, name_table: str="marketPos"):
         super().__init__(name_table)
@@ -137,17 +141,17 @@ class TableMarketPosition(Table):
     async def create_table(self):
         # await self.connect()
         async with pool.acquire() as conn:
-            await conn.execute(""" CREATE TABLE IF NOT EXISTS marketPos (id SERIAL PRIMARY KEY, product_name TEXT, cur_count_pos INTEGER, price numeric) """)
+            await conn.execute(""" CREATE TABLE IF NOT EXISTS marketPos (id SERIAL PRIMARY KEY, product_name TEXT, description VARCHAR(100), cur_count_pos INTEGER, price numeric) """)
 
-    async def insert_into_table(self, product_name: str, count_pos: int, price: Decimal):
+    async def insert_into_table(self, product_name: str, description: str, count_pos: int, price: Decimal):
         # await self.connect()
         async with pool.acquire() as conn:
-            await conn.execute(""" INSERT INTO marketPos (product_name, cur_count_pos, price) VALUES($1, $2, $3) """, product_name, count_pos, price)
+            await conn.execute(""" INSERT INTO marketPos (product_name, description, cur_count_pos, price) VALUES($1, $2, $3, $4) """, product_name, description, count_pos, price)
 
     async def get_data(self) -> dict:
         # await self.connect()
         async with pool.acquire() as conn:
-            dicts = [dict(row) for row in await conn.fetch(""" SELECT product_name, cur_count_pos, price FROM marketPos  """)]
+            dicts = [dict(row) for row in await conn.fetch(""" SELECT product_name, description, cur_count_pos, price FROM marketPos  """)]
             return dicts
 
 
@@ -155,6 +159,10 @@ class TableMarketPosition(Table):
         # await self.connect()
         async with pool.acquire() as conn:
             await conn.execute(""" DELETE FROM marketPos WHERE product_name = $1  """, product_name_del)
+
+    async def change_quanity(self, product_name: str, new_quianity: int):
+        async with pool.acquire() as conn:
+            await conn.execute(""" UPDATE marketPos SET cur_count_pos = $2 WHERE product_name = $1 """, product_name, new_quianity)
 
 class TableOrders(Table):
     def __init__(self, name_table: str="orders"):
