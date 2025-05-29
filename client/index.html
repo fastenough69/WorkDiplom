@@ -5,21 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Автозапчасти - Каталог</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #f4f4f4;
-      }
-      header {
-        background-color: #333;
-        color: white;
-        padding: 1rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-color: #f4f4f4;
+}header {
+  background-color: #333;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
       .container {
+        flex: 1 0 auto;
         max-width: 1200px;
         margin: 0 auto;
         padding: 1rem;
@@ -118,11 +124,28 @@
       .quantity-selector button:hover {
         background-color: #ccc;
       }
+      footer {
+        background-color: #333;
+        color: white;
+        text-align: center;
+        padding: 1rem;
+        width: 100%;
+        flex-shrink: 0;
+      }.footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .contact-info {
+        text-align: right;
+      }
     </style>
   </head>
   <body>
     <header>
-      <h1>Автозапчасти</h1>
+      <h1>Магазин автозапчастей</h1>
       <div style="display: flex; align-items: center;">
         <a href="basket.html" class="cart-link">Корзина (<span id="cart-count">0</span>)</a>
         <div class="auth-buttons" id="auth-buttons"></div>
@@ -136,6 +159,17 @@
       </div>
     </div>
 
+    <footer>
+      <div class="footer-content">
+        <div class="copyright">
+          &copy; 2023 Автозапчасти. Все права защищены.
+        </div>
+        <div class="contact-info">
+          По всем вопросам: <a href="tel:89201001680" style="color: #3498db; text-decoration: none;">8 (920) 100-16-80</a>
+        </div>
+      </div>
+    </footer>
+
     <script>
       document.addEventListener('DOMContentLoaded', async () => {
         await checkAuthStatus();
@@ -148,7 +182,6 @@
           const authButtons = document.getElementById('auth-buttons');
           const token = getCookie('access-token');
           const userPhone = localStorage.getItem('userPhone');
-          console.log('token:', token)
 
           if (token && userPhone) {
             authButtons.innerHTML = `
@@ -206,26 +239,25 @@
             const productCard = document.createElement('div');
             productCard.className = 'product-card';
             productCard.innerHTML = `
-              <h3>${product.product_name}</h3>
-              <div class="price">${product.price} руб.</div>
-              <div class="stock">В наличии: ${product.cur_count_pos} шт.</div>
-              <div class="description">${product.description || 'Описание отсутствует'}</div>
-              <div class="quantity-selector">
-                <button onclick="changeQuantity(this, -1, ${product.cur_count_pos})">-</button>
-                <input type="number" id="quantity-${product.id}" value="1" min="1" max="${product.cur_count_pos}" onchange="validateQuantity(this, ${product.cur_count_pos})">
-                <button onclick="changeQuantity(this, 1, ${product.cur_count_pos})">+</button>
-              </div>
-              <button onclick="addToCart(${product.id}, '${product.product_name.replace(/'/g, "\\'")}', ${product.cur_count_pos})">
-                Добавить в корзину
-              </button>
-            `;
-            container.appendChild(productCard);
-          });
-        } catch (error) {
-          console.error('Ошибка загрузки товаров:', error);
-          alert('Не удалось загрузить товары. Попробуйте позже.');
-        }
+            <h3>${product.product_name}</h3>
+            <div class="price">${product.price} руб.</div>
+            <div class="stock">В наличии: ${product.cur_count_pos} шт.</div>
+            <div class="description">${product.description || 'Описание отсутствует'}</div>
+            <div class="quantity-selector">
+              <button onclick="changeQuantity(this, -1, ${product.cur_count_pos})">-</button>
+              <input type="number" id="quantity-${product.product_name.replace(/ /g, '_')}" value="1" min="1" max="${product.cur_count_pos}" onchange="validateQuantity(this, ${product.cur_count_pos})">
+              <button onclick="changeQuantity(this, 1, ${product.cur_count_pos})">+</button>
+            </div>
+            <button onclick="addToCart('${product.product_name.replace(/'/g, "\\'")}', ${product.cur_count_pos})">
+              Добавить в корзину
+              </button>`;
+          container.appendChild(productCard);
+        });
+      } catch (error) {
+        console.error('Ошибка загрузки товаров:', error);
+        alert('Не удалось загрузить товары. Попробуйте позже.');
       }
+    }
 
       function changeQuantity(button, delta, maxQuantity) {
         const input = button.parentElement.querySelector('input');
@@ -263,51 +295,52 @@
             }
           });
 
-          if (!response.ok) throw new Error('Ошибка загрузки корзины');
-          const data = await response.json();
-          document.getElementById('cart-count').textContent = data.length || 0;
-        } catch (error) {
-          console.error('Ошибка обновления корзины:', error);
-        }
-      }
-
-      async function addToCart(productId, productName, maxQuantity) {
-        const token = getCookie('access-token');
-        const userId = localStorage.getItem('userId');
-        const quantityInput = document.getElementById(`quantity-${productId}`);
-        let quantity = parseInt(quantityInput.value);
-
-        // Проверка корректности количества
-        if (isNaN(quantity)) quantity = 1;
-        if (quantity < 1) quantity = 1;
-        if (quantity > maxQuantity) quantity = maxQuantity;
-
-        if (!token || !userId) {
-          alert('Для добавления товаров в корзину необходимо авторизоваться');
-          window.location.href = 'login.html';
-          return;
-        }
-
-        try {
-          const response = await fetch(`http://localhost:8001/basket/insert?userId=${userId}&product_name=${encodeURIComponent(productName)}&cur_count=${quantity}`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`
+              if (!response.ok) throw new Error('Ошибка загрузки корзины');
+              const data = await response.json();
+              document.getElementById('cart-count').textContent = data.length || 0;
+            } catch (error) {
+              console.error('Ошибка обновления корзины:', error);
             }
-          });
-
-          const result = await response.json();
-          if (result.status) {
-            alert(`Товар добавлен в корзину (${quantity} шт.)!`);
-            await updateCartCount();
-          } else {
-            alert('Ошибка при добавлении товара в корзину');
           }
-        } catch (error) {
-          console.error('Ошибка добавления в корзину:', error);
-          alert('Ошибка при добавлении товара в корзину');
-        }
-      }
+
+            async function addToCart(productName, maxQuantity) {
+              const token = getCookie('access-token');
+              const userId = localStorage.getItem('userId');
+              const quantityInput = document.getElementById(`quantity-${productName.replace(/ /g, '_')}`);
+              let quantity = parseInt(quantityInput.value);
+
+              // Проверка корректности количества
+              if (isNaN(quantity)) quantity = 1;
+              if (quantity < 1) quantity = 1;
+              if (quantity > maxQuantity) quantity = maxQuantity;
+
+              if (!token || !userId) {
+                alert('Для добавления товаров в корзину необходимо авторизоваться');
+                window.location.href = 'login.html';
+                return;
+              }
+
+              try {
+                const encodedProductName = encodeURIComponent(productName);
+                const response = await fetch(`http://localhost:8001/basket/insert?userId=${userId}&product_name=${encodedProductName}&cur_count=${quantity}`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+
+                const result = await response.json();
+                if (result.status) {
+                  alert(`Товар "${productName}" добавлен в корзину (${quantity} шт.)!`);
+                  await updateCartCount();
+                } else {
+                  alert('Ошибка при добавлении товара в корзину: ' + (result.message || ''));
+                }
+              } catch (error) {
+                console.error('Ошибка добавления в корзину:', error);
+                alert('Ошибка при добавлении товара в корзину');
+              }
+            }
     </script>
   </body>
 </html>

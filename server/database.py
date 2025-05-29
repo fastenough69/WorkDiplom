@@ -32,25 +32,19 @@ class Table(abc.ABC):
     async def deleted_row(self):
         ...
 
-    async def _destroy_conn(self):
-        await pool.close()
-
 class TableUsers(Table):
     def __init__(self, name_table: str="Users"):
         super().__init__(name_table)
 
     async def create_table(self):
-        # await self.connect()
         async with pool.acquire() as conn:
             await conn.execute(""" CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, phone TEXT, balance numeric, password bytea, admins boolean ) """)
 
     async def insert_into_table(self, number: str, balance: Decimal, passwd: bytes, admin: bool):
-        # await self.connect()
         async with pool.acquire() as conn:
             await conn.execute(""" INSERT INTO users (phone, balance, password, admins) VALUES($1, $2, $3, $4) """, number, balance, passwd, admin)
 
     async def get_id_user(self, phone: str):
-        # await self.connect()
         async with pool.acquire() as conn:
             _id = await conn.fetchval(""" SELECT id FROM users WHERE phone = $1 """, phone)
             if(phone):
@@ -58,15 +52,12 @@ class TableUsers(Table):
             return False
 
     async def get_data(self) -> dict:
-        # await self.connect()
         async with pool.acquire() as conn:
-            dicts = [dict(row) for row in await conn.fetch(""" SELECT (id, name, balance) FROM users """)]
-            await self._destroy_conn()
+            dicts = [dict(row) for row in await conn.fetch(""" SELECT (id, phone, balance) FROM users """)]
             return dicts
 
     async def check_user(self, phone: str, passwd: str) -> bool:
         result = False
-        # await self.connect()
         async with pool.acquire() as conn:
             res = await conn.fetchrow(""" SELECT phone, password FROM users WHERE phone = $1 """, phone)
             passwd = passwd.encode("utf-8")
@@ -75,7 +66,6 @@ class TableUsers(Table):
             return result
 
     async def is_admin(self, id) -> bool:
-        # await self.connect()
         async with pool.acquire() as conn:
             result = await conn.fetchval(""" SELECT (admins) FROM users WHERE id = $1  """, id)
             return {"admin"}
@@ -85,7 +75,6 @@ class TableBasket(Table):
         super().__init__(name_table)
 
     async def create_table(self):
-        # await self.connect()
         async with pool.acquire() as conn:
             await conn.execute(""" CREATE TABLE IF NOT EXISTS basket (
     id SERIAL PRIMARY KEY,
@@ -96,13 +85,11 @@ class TableBasket(Table):
 )  """)
 
     async def get_data(self) -> dict:
-        # await self.connect()
         async with pool.acquire() as conn:
             dicts = [dict(row) for row in await conn.fetch(""" SELECT basket.user_count_pos, marketPos.product_name FROM basket JOIN marketPos ON marketPos.id = basket.id JOIN users ON users.id=basket.userId  """)]
         return dicts
 
     async def get_basket_user(self, userId: int):
-        # await self.connect()
         async with pool.acquire() as conn:
             rows = await conn.fetch("""
             SELECT b.user_count_pos, m.product_name 
@@ -116,7 +103,6 @@ class TableBasket(Table):
 
     async def insert_into_table(self, userId: int, product_name: str, cur_count: int):
         res = {"status": True}
-        # await self.connect()
         async with pool.acquire() as conn:
             try:
                 await conn.execute(""" INSERT INTO basket (userId, marketPosId, user_count_pos) VALUES ($1, (SELECT id FROM marketPos WHERE product_name = $2 LIMIT 1), $3) """, userId, product_name, cur_count)
@@ -125,38 +111,33 @@ class TableBasket(Table):
             return res
 
     async def deleted_row(self, product_name: str, userId: int):
-        # await self.connect()
         async with pool.acquire() as conn:
             await conn.execute(""" DELETE FROM basket WHERE marketPosId IN (SELECT id FROM marketPos WHERE product_name = $1)
                                AND basket.userId = $2""", product_name, userId)
 
-    async def change_quanity(self, userId: int, new_count_pos: int):
+    async def change_quanity(self, product_name: str, new_count_pos: int):
         async with pool.acquire() as conn:
-            await conn.execute(""" UPDATE basket SET user_count_pos = $1  WHERE userId IN (SELECT id FROM users WHERE id = $2) """, new_count_pos, userId)
+            await conn.execute(""" UPDATE basket SET user_count_pos = $1  WHERE marketPosId IN (SELECT id FROM marketPos WHERE product_name = $2) """, new_count_pos, product_name)
 
 class TableMarketPosition(Table):
     def __init__(self, name_table: str="marketPos"):
         super().__init__(name_table)
 
     async def create_table(self):
-        # await self.connect()
         async with pool.acquire() as conn:
             await conn.execute(""" CREATE TABLE IF NOT EXISTS marketPos (id SERIAL PRIMARY KEY, product_name TEXT, description VARCHAR(100), cur_count_pos INTEGER, price numeric) """)
 
     async def insert_into_table(self, product_name: str, description: str, count_pos: int, price: Decimal):
-        # await self.connect()
         async with pool.acquire() as conn:
             await conn.execute(""" INSERT INTO marketPos (product_name, description, cur_count_pos, price) VALUES($1, $2, $3, $4) """, product_name, description, count_pos, price)
 
     async def get_data(self) -> dict:
-        # await self.connect()
         async with pool.acquire() as conn:
-            dicts = [dict(row) for row in await conn.fetch(""" SELECT product_name, description, cur_count_pos, price FROM marketPos  """)]
+            dicts = [dict(row) for row in await conn.fetch(""" SELECT id, product_name, description, cur_count_pos, price FROM marketPos  """)]
             return dicts
 
 
     async def deleted_row(self, product_name_del: str):
-        # await self.connect()
         async with pool.acquire() as conn:
             await conn.execute(""" DELETE FROM marketPos WHERE product_name = $1  """, product_name_del)
 
@@ -169,7 +150,6 @@ class TableOrders(Table):
         super().__init__(name_table)
 
     async def create_table(self):
-        # await self.connect()
         async with pool.acquire() as conn:
             await conn.execute("""
                     CREATE TABLE IF NOT EXISTS orders (
@@ -181,7 +161,6 @@ class TableOrders(Table):
                 """)
 
     async def insert_into_table(self, userId: int):
-        # await self.connect()
         async with pool.acquire() as conn:
             await conn.execute(""" INSERT INTO orders (userId, basketId, status) VALUES($1, (SELECT id FROM basket WHERE basket.userId=$1 LIMIT 1), $2) """, userId, "peding")
 

@@ -13,12 +13,12 @@ app = FastAPI()
 from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://0.0.0.0:8002", "http://localhost:8002"],  # Для разработки, в продакшене укажите конкретные домены
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+        CORSMiddleware,
+        allow_origins=["http://0.0.0.0:8002", "http://localhost:8002", "http://localhost:8003"], 
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        )
 
 config = AuthXConfig()
 config.JWT_SECRET_KEY = str(os.getenv("JWT_KEY"))
@@ -37,6 +37,15 @@ async def shutdown():
 @app.get("/health")
 async def check_health():
     ...
+
+# @app.post("/insert_more_pos")
+# async def insert_more_pos():
+#     pr_name = ["macbook", "RTX 3060", "RTX 5090", "Samsung Galaxy S27", "Холодильник"]
+#     ds = ["fdsdfgdf", "gfdgdfgd", "gjhfgdjdf", "hfdgsfd", "bvncx"]
+#     counts = [10, 20, 30, 321, 4324]
+#     price = [423423, 756756, 876867, 43244, 56564]
+#     for i in range(4):
+#         await marketpos_table.insert_into_table(pr_name[i], ds[i], counts[i], Decimal(price[i]))
 
 @app.get("/users/create_table")
 async def create_table_users():
@@ -67,19 +76,19 @@ async def check_in_table_users(phone: str, passwd: str):
         token = auth.create_access_token(uid=phone)
         response = JSONResponse(content={"success": True})
         response.set_cookie(key="access-token",
-                             value=token,
-                             httponly=False,
-                             samesite="Lax",
-                             path="/",
-                             max_age=3600,
-                             secure=False,
-                             )
+                            value=token,
+                            httponly=False,
+                            samesite="Lax",
+                            path="/",
+                            max_age=3600,
+                            secure=False,
+                            )
         return response
 
-@app.get("/users/is_admin")
-async def res_is_admin(id: int):
-    res = await user_table.is_admin(id)
-    return res
+# @app.get("/users/is_admin")
+# async def res_is_admin(id: int):
+#     res = await user_table.is_admin(id)
+#     return res
 
 @app.get("/market/create")
 async def create_pos():
@@ -96,8 +105,8 @@ async def insert_table_marketpos(product_name: str, description: str, count_pos:
 
 @app.get("/market/get_data")
 async def get_data_market():
-   res =  await marketpos_table.get_data()
-   return res
+    res =  await marketpos_table.get_data()
+    return res
 
 @app.delete("/market/del_pos")
 async def del_position(product_name: str):
@@ -145,15 +154,15 @@ async def remove_item_in_basket(product_name: str, userId: int):
     return {"status": "ok"}
 
 @app.put("/basket/change_count_pos")
-async def change_count_pos(userId: int, new_count_pos: int):
+async def change_count_pos(product_name: str, new_count_pos: int):
     try:
-        await basket_table.change_quanity(userId, new_count_pos)
+        await basket_table.change_quanity(product_name, new_count_pos)
         return {"status": True}
     except:
         return {"status": False}
-    
 
-@app.post("/orders/create")
+
+@app.get("/orders/create")
 async def create_orders():
     res = {"status": True}
     try:
