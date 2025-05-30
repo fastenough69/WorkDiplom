@@ -78,6 +78,15 @@ class TableUsers(Table):
         async with pool.acquire() as conn:
             dicts = [dict(row) for row in await conn.fetch(""" SELECT (id, phone, balance) FROM users """)]
             return dicts
+        
+    async def get_user(self, userId: int):
+        async with pool.acquire() as conn:
+            res = await conn.fetchrow(""" SELECT (id, phone, balance) FROM users WHERE id = $1 """, userId)
+            return res
+        
+    async def up_user(self, userId: int, new_phone: str, new_balance: Decimal):
+        async with pool.acquire() as conn:
+            await conn.execute(""" UPDATE users SET phone = $1, balance = $2 WHERE id = $3 """, new_phone, new_balance, userId)
 
     async def check_user(self, phone: str, passwd: str) -> bool:
         result = False
@@ -95,12 +104,12 @@ class TableBasket(Table):
     async def create_table(self):
         async with pool.acquire() as conn:
             await conn.execute(""" CREATE TABLE IF NOT EXISTS basket (
-    id SERIAL PRIMARY KEY,
-    userId INTEGER NOT NULL REFERENCES users(id),
-    marketPosId INTEGER NOT NULL REFERENCES marketPos(id),
-    user_count_pos INTEGER DEFAULT 1,
-    UNIQUE(userId, marketPosId)
-)  """)
+                                id SERIAL PRIMARY KEY,
+                                userId INTEGER NOT NULL REFERENCES users(id),
+                                marketPosId INTEGER NOT NULL REFERENCES marketPos(id),
+                                user_count_pos INTEGER DEFAULT 1,
+                                UNIQUE(userId, marketPosId)
+                            )  """)
 
     async def get_data(self) -> dict:
         async with pool.acquire() as conn:
@@ -110,12 +119,12 @@ class TableBasket(Table):
     async def get_basket_user(self, userId: int):
         async with pool.acquire() as conn:
             rows = await conn.fetch("""
-            SELECT b.user_count_pos, m.product_name 
-            FROM basket b
-            JOIN marketPos m ON m.id = b.marketPosId
-            JOIN users u ON u.id = b.userId
-            WHERE b.userId = $1
-            """, userId)
+                                    SELECT b.user_count_pos, m.product_name 
+                                    FROM basket b
+                                    JOIN marketPos m ON m.id = b.marketPosId
+                                    JOIN users u ON u.id = b.userId
+                                    WHERE b.userId = $1
+                                    """, userId)
         dicts = [dict(row) for row in rows]
         return dicts
 
@@ -153,7 +162,15 @@ class TableMarketPosition(Table):
         async with pool.acquire() as conn:
             dicts = [dict(row) for row in await conn.fetch(""" SELECT id, product_name, description, cur_count_pos, price FROM marketPos  """)]
             return dicts
-
+        
+    async def get_product_info(self, productId: int):
+        async with pool.acquire() as conn:
+            res = await conn.fetchrow(""" SELECT (id, product_name, description, price, cur_count_pos) FROM marketPos WHERE id = $1 """, productId)
+            return res
+        
+    async def up_data_product(self, productId: int, product_name: str, description: str, price: Decimal, cur_count_pos: int):
+        async with pool.acquire() as conn:
+            await conn.execute(""" UPDATE marketPos SET product_name = $1, description = $2, price = $3, cur_count_pos = $4 WHERE id = $5 """, product_name, description, price, cur_count_pos, productId)
 
     async def deleted_row(self, product_name_del: str):
         async with pool.acquire() as conn:
@@ -170,13 +187,13 @@ class TableOrders(Table):
     async def create_table(self):
         async with pool.acquire() as conn:
             await conn.execute("""
-                    CREATE TABLE IF NOT EXISTS orders (
-                    id SERIAL PRIMARY KEY, 
-                    userId INTEGER NOT NULL REFERENCES users(id),
-                    basketId INTEGER NOT NULL REFERENCES basket(id),
-                    status TEXT
-                    )
-                """)
+                                CREATE TABLE IF NOT EXISTS orders (
+                                id SERIAL PRIMARY KEY, 
+                                userId INTEGER NOT NULL REFERENCES users(id),
+                                basketId INTEGER NOT NULL REFERENCES basket(id),
+                                status TEXT
+                                )
+                            """)
 
     async def insert_into_table(self, userId: int):
         async with pool.acquire() as conn:

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Body
 from fastapi.responses import JSONResponse, Response
 import uvicorn
 import asyncio
@@ -38,14 +38,14 @@ async def shutdown():
 async def check_health():
     ...
 
-# @app.post("/insert_more_pos")
-# async def insert_more_pos():
-#     pr_name = ["macbook", "RTX 3060", "RTX 5090", "Samsung Galaxy S27", "Холодильник"]
-#     ds = ["fdsdfgdf", "gfdgdfgd", "gjhfgdjdf", "hfdgsfd", "bvncx"]
-#     counts = [10, 20, 30, 321, 4324]
-#     price = [423423, 756756, 876867, 43244, 56564]
-#     for i in range(4):
-#         await marketpos_table.insert_into_table(pr_name[i], ds[i], counts[i], Decimal(price[i]))
+@app.post("/insert_more_pos")
+async def insert_more_pos():
+    pr_name = ["macbook", "RTX 3060", "RTX 5090", "Samsung Galaxy S27", "Холодильник"]
+    ds = ["fdsdfgdf", "gfdgdfgd", "gjhfgdjdf", "hfdgsfd", "bvncx"]
+    counts = [10, 20, 30, 321, 4324]
+    price = [423423, 756756, 876867, 43244, 56564]
+    for i in range(4):
+        await marketpos_table.insert_into_table(pr_name[i], ds[i], counts[i], Decimal(price[i]))
 
 @app.get("/admins/create")
 async def create_table_admins():
@@ -96,6 +96,19 @@ async def get_user_id(phone: str):
     res = await user_table.get_id_user(phone)
     return {"id": res}
 
+@app.get("/users/get_user")
+async def get_user(userId: int):
+    res = await user_table.get_user(userId)
+    return res
+
+@app.put("/users/update")
+async def up_user_info(data = Body()):
+    userId = data["id"]
+    new_phone = data["phone"]
+    new_balance = data["balance"]
+    await user_table.up_user(int(userId), new_phone, Decimal(new_balance))
+    return {"status": True}
+
 @app.get("/users/check")
 async def check_in_table_users(phone: str, passwd: str):
     temp = await user_table.check_user(phone, passwd)
@@ -111,11 +124,6 @@ async def check_in_table_users(phone: str, passwd: str):
                             secure=False,
                             )
         return response
-
-# @app.get("/users/is_admin")
-# async def res_is_admin(id: int):
-#     res = await user_table.is_admin(id)
-#     return res
 
 @app.get("/market/create")
 async def create_pos():
@@ -134,6 +142,21 @@ async def insert_table_marketpos(product_name: str, description: str, count_pos:
 async def get_data_market():
     res =  await marketpos_table.get_data()
     return res
+
+@app.get("/market/get_product")
+async def get_product(productId: int):
+    res = await marketpos_table.get_product_info(productId)
+    return res
+
+@app.put("/market/update")
+async def update_market_pos(data = Body()):
+    productId = int(data["id"])
+    product_name = data["product_name"]
+    description = data["description"]
+    price = data["price"]
+    cur_count_pos = data["cur_count_pos"]
+    await marketpos_table.up_data_product(productId, product_name, description, price, cur_count_pos)
+    return {"status": True}
 
 @app.delete("/market/del_pos")
 async def del_position(product_name: str):

@@ -126,19 +126,32 @@ async function loadUsers() {
 }
 async function openEditUserModal(userId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/users/get_user?id=${userId}`);
-    if (!response.ok) throw new Error('Failed to fetch user data');
+    const response = await fetch(`${API_BASE_URL}/users/get_user?userId=${userId}`);
+    if (!response.ok) throw new Error('Не удалось получить данные пользователя');
 
-    const user = await response.json();
+    const data = await response.json();
+    console.log(data)
+    
+    // Проверяем формат ответа
+    let phone, balance;
+    if (Array.isArray(data.row)) {
+      // Формат: [phone, balance]
+      phone = data.row[1];
+      balance = data.row[2];
+    } else {
+      throw new Error('Неверный формат данных пользователя');
+    }
 
-    document.getElementById('editUserId').value = user.id;
-    document.getElementById('editPhone').value = user.phone;
-    document.getElementById('editBalance').value = user.balance;
+    // Заполняем форму
+    document.getElementById('editUserId').value = userId;
+    document.getElementById('editPhone').value = phone;
+    document.getElementById('editBalance').value = balance;
 
+    // Показываем модальное окно
     document.getElementById('editUserModal').style.display = 'block';
   } catch (error) {
-    console.error('Failed to load user data:', error);
-    showError('Failed to load user data: ' + error.message);
+    console.error('Ошибка загрузки данных:', error);
+    showError('Ошибка загрузки: ' + error.message);
   }
 }
 
@@ -240,20 +253,29 @@ function openAddProductModal() {
 
 async function openEditProductModal(productId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/market/get_product?id=${productId}`);
+    const response = await fetch(`${API_BASE_URL}/market/get_product?productId=${productId}`);
     if (!response.ok) throw new Error('Failed to fetch product data');
 
-    const product = await response.json();
+    const data = await response.json();
 
+    // Проверяем и извлекаем данные из массива row
+    if (!data.row || !Array.isArray(data.row)) {
+      throw new Error('Invalid product data format: expected array "row"');
+    }
+
+    const productData = data.row;
+    
+    // Заполняем форму данными из массива
     document.getElementById('productModalTitle').textContent = 'Edit Product';
-    document.getElementById('productId').value = product.id;
-    document.getElementById('productName').value = product.product_name;
-    document.getElementById('productDescription').value = product.description;
-    document.getElementById('productPrice').value = product.price;
-    document.getElementById('productQuantity').value = product.cur_count_pos;
+    document.getElementById('productId').value = productData[0] || '';        // ID (первый элемент)
+    document.getElementById('productName').value = productData[1] || '';      // Название продукта
+    document.getElementById('productDescription').value = productData[2] || ''; // Описание
+    document.getElementById('productPrice').value = productData[3] || 0;      // Цена
+    document.getElementById('productQuantity').value = productData[4] || 0;    // Количество (если есть)
 
     document.getElementById('productModal').style.display = 'block';
   } catch (error) {
+    console.error('Error loading product data:', error);
     showError('Failed to load product data: ' + error.message);
   }
 }
@@ -267,14 +289,14 @@ async function saveProduct() {
 
   try {
     if (productId) {
-      // Update existing product
-      const response = await fetch(`${API_BASE_URL}/market/update`, {
+      // Обновление существующего товара - используем Body (как в вашем @app.put("/market/update"))
+      const updateResponse = await fetch(`${API_BASE_URL}/market/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: productId,
+          id: parseInt(productId),
           product_name: name,
           description: description,
           price: price,
@@ -282,50 +304,62 @@ async function saveProduct() {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to update product');
+      const updateResult = await updateResponse.json();
+      if (!updateResult.status) throw new Error('Ошибка при обновлении товара');
     } else {
-      // Add new product
-      const response = await fetch(`${API_BASE_URL}/market/insert`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          product_name: name,
-          description: description,
-          price: price,
-          cur_count_pos: quantity
-        })
+      // Добавление нового товара - параметры в URL (как в вашем @app.post("/market/insert"))
+      const url = new URL(`${API_BASE_URL}/market/insert`);
+      url.searchParams.append('product_name', name);
+      url.searchParams.append('description', description);
+      url.searchParams.append('count_pos', quantity);
+      url.searchParams.append('price', price);
+
+      const insertResponse = await fetch(url, {
+        method: 'POST'
       });
 
-      if (!response.ok) throw new Error('Failed to add product');
+      const insertResult = await insertResponse.json();
+      if (insertResult.status !== "ok") throw new Error('Ошибка при добавлении товара');
     }
 
     document.getElementById('productModal').style.display = 'none';
     loadProducts();
   } catch (error) {
-    showError('Failed to save product: ' + error.message);
+    showError('Ошибка при сохранении товара: ' + error.message);
   }
 }
 
 async function deleteProduct(productId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/market/get_product?id=${productId}`);
-    if (!response.ok) throw new Error('Failed to fetch product data');
+    // Получаем информацию о товаре
+    const productResponse = await fetch(`${API_BASE_URL}/market/get_product?productId=${productId}`);
+    if (!productResponse.ok) throw new Error('Ошибка при получении данных товара');
 
-    const product = await response.json();
+    const productData = await productResponse.json();
+    
+    // Проверяем структуру данных и извлекаем название товара
+    if (!productData.row || !Array.isArray(productData.row) || productData.row.length < 2) {
+      throw new Error('Неверный формат данных товара');
+    }
+    
+    const productName = productData.row[1]; // Название товара находится по индексу 1
 
-    if (product && confirm(`Are you sure you want to delete "${product.product_name}"?`)) {
-      const deleteResponse = await fetch(`${API_BASE_URL}/market/delete?id=${productId}`, {
-        method: 'DELETE'
-      });
+    if (confirm(`Вы уверены, что хотите удалить "${productName}"?`)) {
+      // Удаление товара по имени
+      const deleteResponse = await fetch(
+        `${API_BASE_URL}/market/del_pos?product_name=${encodeURIComponent(productName)}`, 
+        {
+          method: 'DELETE'
+        }
+      );
 
-      if (!deleteResponse.ok) throw new Error('Failed to delete product');
+      const deleteResult = await deleteResponse.json();
+      if (deleteResult.status !== "ok") throw new Error('Ошибка при удалении товара');
 
       loadProducts();
     }
   } catch (error) {
-    showError('Failed to delete product: ' + error.message);
+    showError('Ошибка при удалении товара: ' + error.message);
   }
 }
 
