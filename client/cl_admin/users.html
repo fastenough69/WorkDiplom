@@ -28,7 +28,6 @@
                     <th>ID</th>
                     <th>Phone</th>
                     <th>Balance</th>
-                    <th>Is Admin</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -48,11 +47,8 @@
                     <input type="text" id="editPhone" required>
                 </div>
                 <div class="form-group">
-                    <label for="editIsAdmin">Is Admin:</label>
-                    <select id="editIsAdmin">
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                    </select>
+                    <label for="editBalance">Balance:</label>
+                    <input type="number" id="editBalance" required>
                 </div>
                 <button type="submit" class="btn">Save Changes</button>
             </form>

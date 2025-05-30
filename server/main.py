@@ -47,17 +47,44 @@ async def check_health():
 #     for i in range(4):
 #         await marketpos_table.insert_into_table(pr_name[i], ds[i], counts[i], Decimal(price[i]))
 
+@app.get("/admins/create")
+async def create_table_admins():
+    await admin_table.create_table()
+    return {"status": True}
+
+@app.post("/admins/insert")
+async def insert_into_admins(login: str, passwd: str):
+    await admin_table.insert_into_table(login, passwd)
+    return {"status": True}
+
+@app.get("/admins/check_user")
+async def check_admins(login: str, passwd: str):
+    temp = await admin_table.check_user(login, passwd)
+    if(temp):
+        token = auth.create_access_token(uid=login)
+        response = JSONResponse(content={"success": True})
+        response.set_cookie(key="access-token",
+                            value=token,
+                            httponly=False,
+                            samesite="Lax",
+                            path="/",
+                            max_age=3600,
+                            secure=False,
+                            )
+        return response
+
+
 @app.get("/users/create_table")
 async def create_table_users():
     await user_table.create_table()
-    return {"status": "ok"}
+    return {"status": True}
 
 @app.post("/users/insert")
-async def insert_db(phone: str, passwd: str, admin: bool=False):
+async def insert_db(phone: str, passwd: str):
     passwd = passwd.encode("utf-8")
     hashed = bcrypt.hashpw(passwd, bcrypt.gensalt())
-    await user_table.insert_into_table(phone, Decimal(0), hashed, admin)
-    return {"status": "ok"}
+    await user_table.insert_into_table(phone, Decimal(0), hashed)
+    return {"status": True}
 
 @app.get("/users/get_users")
 async def get_all_users():
@@ -93,7 +120,7 @@ async def check_in_table_users(phone: str, passwd: str):
 @app.get("/market/create")
 async def create_pos():
     await marketpos_table.create_table()
-    return {"status": "ok"}
+    return {"status": True}
 
 @app.post("/market/insert")
 async def insert_table_marketpos(product_name: str, description: str, count_pos: int, price: Decimal):

@@ -32,17 +32,40 @@ class Table(abc.ABC):
     async def deleted_row(self):
         ...
 
+class TableAdmins(Table):
+    def __init__(self, name_table: str="Admins"):
+        super().__init__(name_table)
+
+    async def create_table(self):
+        async with pool.acquire() as conn:
+            await conn.execute(""" CREATE TABLE IF NOT EXISTS admins (id SERIAL PRIMARY KEY, login VARCHAR(30), password bytea)  """)
+
+    async def insert_into_table(self, login: str, passwd: str):
+        passwd = passwd.encode("utf-8")
+        hashed = bcrypt.hashpw(passwd, bcrypt.gensalt())
+        async with pool.acquire() as conn:
+            await conn.execute(""" INSERT INTO admins (login, password) VALUES($1, $2)  """, login, hashed)
+
+    async def check_user(self, login: str, passwd: str):
+        result = False
+        async with pool.acquire() as conn:
+            res = await conn.fetchrow(""" SELECT login, password FROM admins WHERE login = $1 """, login)
+            passwd = passwd.encode("utf-8")
+            if(bcrypt.checkpw(passwd, res["password"])):
+                result = True
+            return result
+
 class TableUsers(Table):
     def __init__(self, name_table: str="Users"):
         super().__init__(name_table)
 
     async def create_table(self):
         async with pool.acquire() as conn:
-            await conn.execute(""" CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, phone TEXT, balance numeric, password bytea, admins boolean ) """)
+            await conn.execute(""" CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, phone TEXT, balance numeric, password bytea) """)
 
-    async def insert_into_table(self, number: str, balance: Decimal, passwd: bytes, admin: bool):
+    async def insert_into_table(self, number: str, balance: Decimal, passwd: bytes):
         async with pool.acquire() as conn:
-            await conn.execute(""" INSERT INTO users (phone, balance, password, admins) VALUES($1, $2, $3, $4) """, number, balance, passwd, admin)
+            await conn.execute(""" INSERT INTO users (phone, balance, password) VALUES($1, $2, $3) """, number, balance, passwd)
 
     async def get_id_user(self, phone: str):
         async with pool.acquire() as conn:
@@ -64,11 +87,6 @@ class TableUsers(Table):
             if(bcrypt.checkpw(passwd, res["password"])):
                 result = True
             return result
-
-    async def is_admin(self, id) -> bool:
-        async with pool.acquire() as conn:
-            result = await conn.fetchval(""" SELECT (admins) FROM users WHERE id = $1  """, id)
-            return {"admin"}
 
 class TableBasket(Table):
     def __init__(self, name_table: str="basket"):
@@ -168,3 +186,4 @@ user_table = TableUsers()
 marketpos_table = TableMarketPosition()
 basket_table = TableBasket()        
 order_table = TableOrders()
+admin_table = TableAdmins()
