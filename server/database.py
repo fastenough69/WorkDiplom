@@ -55,17 +55,24 @@ class TableAdmins(Table):
                 result = True
             return result
 
+# class TableNewUsers(Table):
+#     def __init__(self, name_table: str="users"):
+#         super().__init__(name_table)
+
+#     async def create_table(self):
+#         ...    
+
 class TableUsers(Table):
     def __init__(self, name_table: str="Users"):
         super().__init__(name_table)
 
     async def create_table(self):
         async with pool.acquire() as conn:
-            await conn.execute(""" CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, phone TEXT, balance numeric, password bytea) """)
+            await conn.execute(""" CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, phone TEXT, password bytea) """)
 
-    async def insert_into_table(self, number: str, balance: Decimal, passwd: bytes):
+    async def insert_into_table(self, number: str, passwd: bytes):
         async with pool.acquire() as conn:
-            await conn.execute(""" INSERT INTO users (phone, balance, password) VALUES($1, $2, $3) """, number, balance, passwd)
+            await conn.execute(""" INSERT INTO users (phone, password) VALUES($1, $2) """, number, passwd)
 
     async def get_id_user(self, phone: str):
         async with pool.acquire() as conn:
@@ -76,17 +83,17 @@ class TableUsers(Table):
 
     async def get_data(self) -> dict:
         async with pool.acquire() as conn:
-            dicts = [dict(row) for row in await conn.fetch(""" SELECT (id, phone, balance) FROM users """)]
+            dicts = [dict(row) for row in await conn.fetch(""" SELECT (id, phone) FROM users """)]
             return dicts
         
     async def get_user(self, userId: int):
         async with pool.acquire() as conn:
-            res = await conn.fetchrow(""" SELECT (id, phone, balance) FROM users WHERE id = $1 """, userId)
+            res = await conn.fetchrow(""" SELECT (id, phone) FROM users WHERE id = $1 """, userId)
             return res
         
-    async def up_user(self, userId: int, new_phone: str, new_balance: Decimal):
+    async def up_user(self, userId: int, new_phone: str):
         async with pool.acquire() as conn:
-            await conn.execute(""" UPDATE users SET phone = $1, balance = $2 WHERE id = $3 """, new_phone, new_balance, userId)
+            await conn.execute(""" UPDATE users SET phone = $1 WHERE id = $3 """, new_phone, userId)
 
     async def check_user(self, phone: str, passwd: str) -> bool:
         result = False
@@ -174,6 +181,7 @@ class TableMarketPosition(Table):
 
     async def deleted_row(self, product_name_del: str):
         async with pool.acquire() as conn:
+            await conn.execute(""" DELETE FROM  basket WHERE marketPosId IN (SELECT id FROM marketPos WHERE product_name = $1) """, product_name_del)
             await conn.execute(""" DELETE FROM marketPos WHERE product_name = $1  """, product_name_del)
 
     async def change_quanity(self, product_name: str, new_quianity: int):
@@ -190,14 +198,24 @@ class TableOrders(Table):
                                 CREATE TABLE IF NOT EXISTS orders (
                                 id SERIAL PRIMARY KEY, 
                                 userId INTEGER NOT NULL REFERENCES users(id),
-                                basketId INTEGER NOT NULL REFERENCES basket(id),
+                                productIds INTEGER[],
+                                date_orders timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                 status TEXT
                                 )
                             """)
 
     async def insert_into_table(self, userId: int):
         async with pool.acquire() as conn:
-            await conn.execute(""" INSERT INTO orders (userId, basketId, status) VALUES($1, (SELECT id FROM basket WHERE basket.userId=$1 LIMIT 1), $2) """, userId, "peding")
+            await conn.execute(""" INSERT INTO orders (userId, productIds, status) 
+                                VALUES($1, ARRAY(SELECT marketPosId FROM basket WHERE userId = $1), $2) """, userId, "peding")
+            await conn.execute(""" UPDATE marketPos SET cur_count_pos = cur_count_pos - basket.user_count_pos FROM basket 
+                               WHERE basket.userId = $1 AND marketPos.id = basket.marketPosId """, userId)
+            await conn.execute(""" DELETE FROM basket WHERE userId = $1  """, userId)
+
+    async def get_data(self):
+        async with pool.acquire() as conn:
+            res = await conn.fetch(""" SELECT * FROM orders  """)
+            return res
 
 user_table = TableUsers()
 marketpos_table = TableMarketPosition()

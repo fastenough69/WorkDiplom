@@ -94,7 +94,7 @@ body {
         );
 
         const result = await response.json();
-        if (result.status === 'ok') {
+        if (result.status === true) {
             alert('Регистрация успешна. Войдите в систему.');
             window.location.href = 'login.html';
         } else {

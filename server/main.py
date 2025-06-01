@@ -83,7 +83,7 @@ async def create_table_users():
 async def insert_db(phone: str, passwd: str):
     passwd = passwd.encode("utf-8")
     hashed = bcrypt.hashpw(passwd, bcrypt.gensalt())
-    await user_table.insert_into_table(phone, Decimal(0), hashed)
+    await user_table.insert_into_table(phone, hashed)
     return {"status": True}
 
 @app.get("/users/get_users")
@@ -222,9 +222,15 @@ async def create_orders():
     return res
 
 @app.post("/orders/insert")
-async def insert_into_orders_table(userId: int):
+async def insert_into_orders_table(data = Body()):
+    userId = int(data["userId"])
     await order_table.insert_into_table(userId)
     return {"status": True}
+
+@app.get("/orders/get_data")
+async def get_all_orders():
+    res = await order_table.get_data()
+    return res
 
 if(__name__ == "__main__"):
     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)

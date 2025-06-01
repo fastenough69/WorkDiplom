@@ -81,7 +81,7 @@ async function loadUsers() {
     if (!response.ok) throw new Error('Failed to fetch users');
 
     const data = await response.json();
-    
+
     // Преобразуем данные из формата [{row: [...]}] в [{id, phone, balance}]
     const usersData = data.map(item => ({
       id: item.row[0],
@@ -131,7 +131,7 @@ async function openEditUserModal(userId) {
 
     const data = await response.json();
     console.log(data)
-    
+
     // Проверяем формат ответа
     let phone, balance;
     if (Array.isArray(data.row)) {
@@ -264,7 +264,7 @@ async function openEditProductModal(productId) {
     }
 
     const productData = data.row;
-    
+
     // Заполняем форму данными из массива
     document.getElementById('productModalTitle').textContent = 'Edit Product';
     document.getElementById('productId').value = productData[0] || '';        // ID (первый элемент)
@@ -336,12 +336,12 @@ async function deleteProduct(productId) {
     if (!productResponse.ok) throw new Error('Ошибка при получении данных товара');
 
     const productData = await productResponse.json();
-    
+
     // Проверяем структуру данных и извлекаем название товара
     if (!productData.row || !Array.isArray(productData.row) || productData.row.length < 2) {
       throw new Error('Неверный формат данных товара');
     }
-    
+
     const productName = productData.row[1]; // Название товара находится по индексу 1
 
     if (confirm(`Вы уверены, что хотите удалить "${productName}"?`)) {
@@ -363,6 +363,39 @@ async function deleteProduct(productId) {
   }
 }
 
+async function loadOrders() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/orders/get_data`);
+    if (!response.ok) throw new Error('Не удалось загрузить заказы');
+
+    const orders = await response.json();
+
+    const tableBody = document.querySelector('#ordersTable tbody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+
+    orders.forEach(order => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${order.id}</td>
+        <td>${order.user_id}</td>
+        <td>${order.product_id}</td>
+        <td>${order.quantity}</td>
+        <td>${order.total_price}</td>
+        <td>${order.status}</td>
+        <td>${new Date(order.date).toLocaleString()}</td>
+      `;
+      tableBody.appendChild(row);
+    });
+  } catch (error) {
+    console.error('Ошибка загрузки заказов:', error);
+    showError('Ошибка загрузки заказов: ' + error.message);
+  }
+}
+
+
+// Initialize the page
 // Initialize the page
 document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
@@ -395,6 +428,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeBtn) closeBtn.addEventListener('click', () => {
       document.getElementById('editUserModal').style.display = 'none';
     });
+  }
+
+  // Orders page
+  if (document.getElementById('ordersTable')) {
+    loadOrders();
+
+    const refreshBtn = document.getElementById('refreshOrdersBtn');
+    if (refreshBtn) refreshBtn.addEventListener('click', loadOrders);
   }
 
   // Market page
