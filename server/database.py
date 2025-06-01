@@ -55,13 +55,6 @@ class TableAdmins(Table):
                 result = True
             return result
 
-# class TableNewUsers(Table):
-#     def __init__(self, name_table: str="users"):
-#         super().__init__(name_table)
-
-#     async def create_table(self):
-#         ...    
-
 class TableUsers(Table):
     def __init__(self, name_table: str="Users"):
         super().__init__(name_table)
@@ -103,6 +96,10 @@ class TableUsers(Table):
             if(bcrypt.checkpw(passwd, res["password"])):
                 result = True
             return result
+
+    async def deleted_row(self, userId: int):
+        async with pool.acquire() as conn:
+            await conn.execute(""" DELETE FROM users WHERE id = $1  """, userId)
 
 class TableBasket(Table):
     def __init__(self, name_table: str="basket"):
@@ -199,6 +196,7 @@ class TableOrders(Table):
                                 id SERIAL PRIMARY KEY, 
                                 userId INTEGER NOT NULL REFERENCES users(id),
                                 productIds INTEGER[],
+                                total_price numeric,
                                 date_orders timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                 status TEXT
                                 )
@@ -206,16 +204,29 @@ class TableOrders(Table):
 
     async def insert_into_table(self, userId: int):
         async with pool.acquire() as conn:
-            await conn.execute(""" INSERT INTO orders (userId, productIds, status) 
-                                VALUES($1, ARRAY(SELECT marketPosId FROM basket WHERE userId = $1), $2) """, userId, "peding")
+            await conn.execute(""" INSERT INTO orders (userId, productIds, total_price , status) 
+                               SELECT $1, ARRAY_AGG(basket.marketPosId), SUM(basket.user_count_pos * marketPos.price), $2
+                               FROM basket JOIN marketPos ON basket.marketPosId = marketPos.id 
+                               WHERE basket.userId = $1""", userId, "execute")
+
             await conn.execute(""" UPDATE marketPos SET cur_count_pos = cur_count_pos - basket.user_count_pos FROM basket 
                                WHERE basket.userId = $1 AND marketPos.id = basket.marketPosId """, userId)
+
             await conn.execute(""" DELETE FROM basket WHERE userId = $1  """, userId)
 
     async def get_data(self):
         async with pool.acquire() as conn:
             res = await conn.fetch(""" SELECT * FROM orders  """)
             return res
+
+    # async def sort_by_date(self):
+    #     async with pool.acquire() as conn:
+    #         res = await conn.fetch(""" SELECT * FROM orders ORDER BY date_order """)
+    #         return res
+
+    # async def sort_by_price(self):
+    #     async with pool.acquire() as conn:
+    #         res = await conn.fetch(""" SELECT * FROM orders ORDER BY total_price  """)
 
 user_table = TableUsers()
 marketpos_table = TableMarketPosition()

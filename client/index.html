@@ -29,11 +29,16 @@ body {
         max-width: 1200px;
         margin: 0 auto;
         padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
       .products {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
         gap: 1rem;
+        width: 100%;
       }
       .product-card {
         background: white;
@@ -42,6 +47,7 @@ body {
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         display: flex;
         flex-direction: column;
+        width: 250px;
       }
       .product-card h3 {
         margin-top: 0;

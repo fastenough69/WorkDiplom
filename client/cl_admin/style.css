@@ -166,3 +166,14 @@ textarea {
     resize: vertical;
     min-height: 100px;
 }
+
+/* Добавим в style.css */
+th.sortable {
+    cursor: pointer;
+    position: relative;
+    padding-right: 20px;
+}
+
+th.sortable:hover {
+    background-color: #3498db;
+}

@@ -109,6 +109,11 @@ async def up_user_info(data = Body()):
     await user_table.up_user(int(userId), new_phone, Decimal(new_balance))
     return {"status": True}
 
+@app.delete("/users/delete")
+async def del_user(userId: int):
+    await user_table.deleted_row(userId)
+    return {"status": True}
+
 @app.get("/users/check")
 async def check_in_table_users(phone: str, passwd: str):
     temp = await user_table.check_user(phone, passwd)
@@ -231,6 +236,16 @@ async def insert_into_orders_table(data = Body()):
 async def get_all_orders():
     res = await order_table.get_data()
     return res
+
+# @app.get("/orders/get_data/sort_by_date")
+# async def get_sort_by_date():
+#     res = await order_table.sort_by_date()
+#     return res
+
+# @app.get("/orders/get_data/sort_by_price")
+# async def get_sort_by_price():
+#     res = await order_table.sort_by_price()
+#     return res
 
 if(__name__ == "__main__"):
     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)

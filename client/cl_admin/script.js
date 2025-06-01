@@ -52,7 +52,6 @@ function setupLogin() {
       const password = passwordInput.value;
 
       try {
-        // Исправлено: убрана лишняя скобка после login
         const response = await fetch(`${API_BASE_URL}/admins/check_user?login=${encodeURIComponent(login)}&passwd=${encodeURIComponent(password)}`, {
           method: 'GET',
           credentials: 'include'
@@ -74,6 +73,7 @@ function setupLogin() {
     });
   }
 }
+
 // Users management
 async function loadUsers() {
   try {
@@ -82,7 +82,6 @@ async function loadUsers() {
 
     const data = await response.json();
 
-    // Преобразуем данные из формата [{row: [...]}] в [{id, phone, balance}]
     const usersData = data.map(item => ({
       id: item.row[0],
       phone: item.row[1],
@@ -111,7 +110,6 @@ async function loadUsers() {
       tableBody.appendChild(row);
     });
 
-    // Добавляем обработчики событий для кнопок
     document.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', () => openEditUserModal(btn.dataset.id));
     });
@@ -124,6 +122,7 @@ async function loadUsers() {
     showError('Failed to load users: ' + error.message);
   }
 }
+
 async function openEditUserModal(userId) {
   try {
     const response = await fetch(`${API_BASE_URL}/users/get_user?userId=${userId}`);
@@ -132,22 +131,18 @@ async function openEditUserModal(userId) {
     const data = await response.json();
     console.log(data)
 
-    // Проверяем формат ответа
     let phone, balance;
     if (Array.isArray(data.row)) {
-      // Формат: [phone, balance]
       phone = data.row[1];
       balance = data.row[2];
     } else {
       throw new Error('Неверный формат данных пользователя');
     }
 
-    // Заполняем форму
     document.getElementById('editUserId').value = userId;
     document.getElementById('editPhone').value = phone;
     document.getElementById('editBalance').value = balance;
 
-    // Показываем модальное окно
     document.getElementById('editUserModal').style.display = 'block';
   } catch (error) {
     console.error('Ошибка загрузки данных:', error);
@@ -185,7 +180,7 @@ async function saveUserChanges() {
 async function deleteUser(userId) {
   if (confirm('Are you sure you want to delete this user?')) {
     try {
-      const response = await fetch(`${API_BASE_URL}/users/delete?id=${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/users/delete?userId=${userId}`, {
         method: 'DELETE'
       });
 
@@ -227,7 +222,6 @@ async function loadProducts() {
       tableBody.appendChild(row);
     });
 
-    // Add event listeners to buttons
     document.querySelectorAll('.edit-product-btn').forEach(btn => {
       btn.addEventListener('click', () => openEditProductModal(btn.dataset.id));
     });
@@ -258,20 +252,18 @@ async function openEditProductModal(productId) {
 
     const data = await response.json();
 
-    // Проверяем и извлекаем данные из массива row
     if (!data.row || !Array.isArray(data.row)) {
       throw new Error('Invalid product data format: expected array "row"');
     }
 
     const productData = data.row;
 
-    // Заполняем форму данными из массива
     document.getElementById('productModalTitle').textContent = 'Edit Product';
-    document.getElementById('productId').value = productData[0] || '';        // ID (первый элемент)
-    document.getElementById('productName').value = productData[1] || '';      // Название продукта
-    document.getElementById('productDescription').value = productData[2] || ''; // Описание
-    document.getElementById('productPrice').value = productData[3] || 0;      // Цена
-    document.getElementById('productQuantity').value = productData[4] || 0;    // Количество (если есть)
+    document.getElementById('productId').value = productData[0] || '';
+    document.getElementById('productName').value = productData[1] || '';
+    document.getElementById('productDescription').value = productData[2] || '';
+    document.getElementById('productPrice').value = productData[3] || 0;
+    document.getElementById('productQuantity').value = productData[4] || 0;
 
     document.getElementById('productModal').style.display = 'block';
   } catch (error) {
@@ -289,7 +281,6 @@ async function saveProduct() {
 
   try {
     if (productId) {
-      // Обновление существующего товара - используем Body (как в вашем @app.put("/market/update"))
       const updateResponse = await fetch(`${API_BASE_URL}/market/update`, {
         method: 'PUT',
         headers: {
@@ -307,7 +298,6 @@ async function saveProduct() {
       const updateResult = await updateResponse.json();
       if (!updateResult.status) throw new Error('Ошибка при обновлении товара');
     } else {
-      // Добавление нового товара - параметры в URL (как в вашем @app.post("/market/insert"))
       const url = new URL(`${API_BASE_URL}/market/insert`);
       url.searchParams.append('product_name', name);
       url.searchParams.append('description', description);
@@ -331,21 +321,18 @@ async function saveProduct() {
 
 async function deleteProduct(productId) {
   try {
-    // Получаем информацию о товаре
     const productResponse = await fetch(`${API_BASE_URL}/market/get_product?productId=${productId}`);
     if (!productResponse.ok) throw new Error('Ошибка при получении данных товара');
 
     const productData = await productResponse.json();
 
-    // Проверяем структуру данных и извлекаем название товара
     if (!productData.row || !Array.isArray(productData.row) || productData.row.length < 2) {
       throw new Error('Неверный формат данных товара');
     }
 
-    const productName = productData.row[1]; // Название товара находится по индексу 1
+    const productName = productData.row[1];
 
     if (confirm(`Вы уверены, что хотите удалить "${productName}"?`)) {
-      // Удаление товара по имени
       const deleteResponse = await fetch(
         `${API_BASE_URL}/market/del_pos?product_name=${encodeURIComponent(productName)}`, 
         {
@@ -363,39 +350,88 @@ async function deleteProduct(productId) {
   }
 }
 
-async function loadOrders() {
+// Orders management with sorting
+async function loadOrders(sortBy = 'date', sortDirection = 'desc') {
   try {
-    const response = await fetch(`${API_BASE_URL}/orders/get_data`);
-    if (!response.ok) throw new Error('Не удалось загрузить заказы');
+    const ordersResponse = await fetch(`${API_BASE_URL}/orders/get_data`);
+    if (!ordersResponse.ok) throw new Error('Не удалось загрузить заказы');
+    let orders = await ordersResponse.json();
 
-    const orders = await response.json();
+    // Сортируем заказы
+    orders.sort((a, b) => {
+      let valueA, valueB;
+      
+      if (sortBy === 'date') {
+        valueA = new Date(a.date_orders).getTime();
+        valueB = new Date(b.date_orders).getTime();
+      } else if (sortBy === 'total_price') {
+        valueA = a.total_price;
+        valueB = b.total_price;
+      }
+      
+      if (valueA < valueB) {
+        return sortDirection === 'asc' ? -1 : 1;
+      }
+      if (valueA > valueB) {
+        return sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
 
     const tableBody = document.querySelector('#ordersTable tbody');
     if (!tableBody) return;
-
     tableBody.innerHTML = '';
 
-    orders.forEach(order => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${order.id}</td>
-        <td>${order.user_id}</td>
-        <td>${order.product_id}</td>
-        <td>${order.quantity}</td>
-        <td>${order.total_price}</td>
-        <td>${order.status}</td>
-        <td>${new Date(order.date).toLocaleString()}</td>
-      `;
-      tableBody.appendChild(row);
-    });
+    for (const order of orders) {
+      try {
+        const userResponse = await fetch(`${API_BASE_URL}/users/get_user?userId=${order.userid}`);
+        const userData = await userResponse.json();
+        const userPhone = userData.row ? userData.row[1] : 'Неизвестно';
+
+        let productNames = [];
+        if (Array.isArray(order.productids)) {
+          const productRequests = order.productids.map(productId => 
+            fetch(`${API_BASE_URL}/market/get_product?productId=${productId}`)
+          );
+          
+          const productResponses = await Promise.all(productRequests);
+          const productData = await Promise.all(productResponses.map(r => r.json()));
+          
+          productNames = productData.map(p => p.row ? p.row[1] : `Товар (ID: ${productId})`);
+        } else {
+          productNames = ['Нет данных о товарах'];
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${order.id}</td>
+          <td>${userPhone}</td>
+          <td>${productNames.join(', ')}</td>
+          <td>${order.total_price.toFixed(2)}</td>
+          <td>${order.status}</td>
+          <td>${new Date(order.date_orders).toLocaleString()}</td>
+        `;
+        tableBody.appendChild(row);
+      } catch (error) {
+        console.error(`Ошибка обработки заказа ${order.id}:`, error);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${order.id}</td>
+          <td>Ошибка загрузки</td>
+          <td>Ошибка загрузки</td>
+          <td>${order.total_price?.toFixed(2) || 'N/A'}</td>
+          <td>${order.status || 'N/A'}</td>
+          <td>${order.date_orders ? new Date(order.date_orders).toLocaleString() : 'N/A'}</td>
+        `;
+        tableBody.appendChild(row);
+      }
+    }
   } catch (error) {
     console.error('Ошибка загрузки заказов:', error);
     showError('Ошибка загрузки заказов: ' + error.message);
   }
 }
 
-
-// Initialize the page
 // Initialize the page
 document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
@@ -430,14 +466,73 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Orders page
-  if (document.getElementById('ordersTable')) {
-    loadOrders();
+  // Orders page with sorting
+// ... (предыдущий код остается без изменений до раздела Orders page)
 
+  // Orders page with sorting
+  if (document.getElementById('ordersTable')) {
+    let currentSort = {
+      column: 'date',
+      direction: 'desc'
+    };
+    
+    const loadSortedOrders = async () => {
+      await loadOrders(currentSort.column, currentSort.direction);
+    };
+    
+    // Функция для обновления индикаторов сортировки
+    const updateSortIndicators = () => {
+      document.querySelectorAll('#ordersTable th.sortable').forEach(th => {
+        // Сохраняем исходный текст заголовка (без стрелок)
+        const originalText = th.getAttribute('data-original-text') || th.textContent.trim();
+        th.setAttribute('data-original-text', originalText);
+        
+        // Очищаем содержимое и добавляем текст + стрелку при необходимости
+        th.innerHTML = originalText;
+        
+        if (th.dataset.sort === currentSort.column) {
+          th.innerHTML += currentSort.direction === 'asc' ? ' ↑' : ' ↓';
+        }
+      });
+    };
+    
+    // Инициализация заголовков таблицы
+    document.querySelectorAll('#ordersTable th.sortable').forEach(th => {
+      // Сохраняем исходный текст заголовка при первой загрузке
+      if (!th.getAttribute('data-original-text')) {
+        th.setAttribute('data-original-text', th.textContent.trim());
+      }
+      
+      // Добавляем обработчик клика
+      th.addEventListener('click', () => {
+        const column = th.dataset.sort;
+        if (currentSort.column === column) {
+          // Меняем направление, если кликнули по той же колонке
+          currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          // Иначе сортируем по новой колонке
+          currentSort.column = column;
+          currentSort.direction = 'asc';
+        }
+        
+        // Обновляем таблицу и индикаторы
+        loadSortedOrders();
+        updateSortIndicators();
+      });
+    });
+    
+    // Первоначальная загрузка
+    loadSortedOrders();
+    updateSortIndicators();
+    
     const refreshBtn = document.getElementById('refreshOrdersBtn');
-    if (refreshBtn) refreshBtn.addEventListener('click', loadOrders);
+    if (refreshBtn) refreshBtn.addEventListener('click', () => {
+      loadSortedOrders();
+      updateSortIndicators();
+    });
   }
 
+// ... (остальной код остается без изменений)
   // Market page
   if (document.getElementById('productsTable')) {
     loadProducts();
