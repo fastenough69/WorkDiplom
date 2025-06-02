@@ -177,3 +177,80 @@ th.sortable {
 th.sortable:hover {
     background-color: #3498db;
 }
+
+/* Добавить в конец файла style.css */
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+}
+
+.form-group input[type="file"]:focus {
+    outline: none;
+    border-color: #2980b9;
+}
+
+/* Добавить в конец файла style.css */
+.product-with-image {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.product-with-image img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+/* Стиль для заглушки */
+img[src="placeholder.jpg"] {
+  opacity: 0.6;
+  background-color: #f0f0f0;
+  padding: 5px;
+}
+
+/* Стили для изображений товаров */
+.product-with-image {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.product-with-image img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: #f5f5f5;
+}
+
+/* Стиль для заглушки (уже встроенной в base64) */
+.product-with-image img[src^="data:image/svg+xml"] {
+  background-color: #f9f9f9;
+  padding: 5px;
+}
+
+/* Добавьте в конец файла style.css */
+.btn {
+  position: relative;
+  z-index: 1;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.actions input[type="text"] {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-right: 5px;
+}

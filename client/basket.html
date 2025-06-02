@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Автозапчасти - Корзина</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #f4f4f4;
-      }
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+}
       header {
         background-color: #333;
         color: white;
@@ -52,9 +52,11 @@
         color: white;
         border: none;
         padding: 0.5rem 1rem;
-        border-radius: 3px;
+        border-radius: 4px;
         cursor: pointer;
         margin-left: 1rem;
+        font-size: 0.9rem;
+        transition: background-color 0.2s;
       }
       .cart-item-actions button:hover {
         background-color: #c0392b;
@@ -70,11 +72,12 @@
         color: white;
         border: none;
         padding: 0.8rem 1.5rem;
-        border-radius: 3px;
+        border-radius: 4px;
         cursor: pointer;
         font-size: 1rem;
         margin-top: 1rem;
         float: right;
+        transition: background-color 0.2s;
       }
       .checkout-btn:hover {
         background-color: #27ae60;
@@ -84,6 +87,15 @@
         margin-top: 1rem;
         color: #3498db;
         text-decoration: none;
+        padding: 0.5rem 1rem;
+        background-color: white;
+        border-radius: 4px;
+        border: 1px solid #3498db;
+        transition: all 0.2s;
+      }
+      .back-link:hover {
+        background-color: #3498db;
+        color: white;
       }
       .quantity-selector {
         display: flex;
@@ -96,22 +108,42 @@
         text-align: center;
         margin: 0 0.5rem;
         border: 1px solid #ddd;
-        border-radius: 3px;
+        border-radius: 4px;
       }
       .quantity-selector button {
-        background-color: #ddd;
-        color: #333;
+        background-color: #3498db;
+        color: white;
         border: none;
-        width: 25px;
-        height: 25px;
+        width: 30px;
+        height: 30px;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        border-radius: 3px;
+        border-radius: 4px;
+        font-size: 1rem;
+        transition: background-color 0.2s;
       }
       .quantity-selector button:hover {
-        background-color: #ccc;
+        background-color: #2980b9;
+      }
+      .empty-cart-message {
+        text-align: center;
+        padding: 2rem;
+        color: #666;
+        font-size: 1.1rem;
+      }
+
+      .back-to-catalog {
+        color: white;
+        background-color: #3498db;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        text-decoration: none;
+        transition: background-color 0.2s;
+      }
+      .back-to-catalog:hover {
+        background-color: #2980b9;
       }
     </style>
   </head>
@@ -119,7 +151,7 @@
     <header>
       <h1>Автозапчасти</h1>
       <div>
-        <a href="index.html" class="cart-link">Назад в каталог</a>
+        <a href="index.html" class="back-to-catalog">Назад в каталог</a>
         <span id="auth-section" style="margin-left: 1rem;"></span>
       </div>
     </header>
@@ -156,14 +188,14 @@
 
         if (token && userPhone) {
           authSection.innerHTML = `<span style="color: white;">${userPhone}</span>
-                                   <a href="#" onclick="logout()" style="margin-left: 1rem; color: #e74c3c;">Выйти</a>`;
+                                   <a href="#" onclick="logout()" style="margin-left: 1rem; color: white; background-color: #e74c3c; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none;">Выйти</a>`;
         }
       }
 
       async function getUserId() {
         const userPhone = localStorage.getItem('userPhone');
         if (!userPhone) return null;
-        
+
         const idResponse = await fetch(`http://localhost:8001/users/get_id?phone=${encodeURIComponent(userPhone)}`);
         const idData = await idResponse.json();
         return idData.id;
@@ -196,8 +228,8 @@
           let total = 0;
 
           if (items.length === 0) {
-            container.innerHTML = '<p>Ваша корзина пуста</p>';
-            document.getElementById('total-price').textContent = '0';
+            container.innerHTML = '<p class="empty-cart-message">Ваша корзина пуста</p>';
+            document.getElementById('total-price').textContent = '0.00';
             return;
           }
 
@@ -213,31 +245,30 @@
               const itemElement = document.createElement('div');
               itemElement.className = 'cart-item';
               itemElement.innerHTML = `
-                <div class="cart-item-info">
-                  <h3>${item.product_name}</h3>
-                  <div class="quantity-selector">
-                    <button onclick="changeQuantity(this, -1, '${item.product_name}', ${product.cur_count_pos})">-</button>
-                    <input type="number" id="quantity-${item.product_name.replace(/ /g, '_')}" 
-                           value="${item.user_count_pos}" min="1" max="${product.cur_count_pos}" 
-                           onchange="updateQuantity('${item.product_name}', ${product.cur_count_pos})">
-                    <button onclick="changeQuantity(this, 1, '${item.product_name}', ${product.cur_count_pos})">+</button>
-                  </div>
-                  <div>Цена: ${product.price} руб. × ${item.user_count_pos} = ${itemTotal} руб.</div>
-                </div>
-                <div class="cart-item-actions">
-                  <button onclick="removeFromCart('${item.product_name}')">Удалить</button>
-                </div>
-              `;
+          <div class="cart-item-info">
+            <h3>${item.product_name}</h3>
+            <div class="quantity-selector">
+              <button onclick="changeQuantity(this, -1, '${item.product_name}', ${product.cur_count_pos})">-</button>
+              <input type="number" id="quantity-${item.product_name.replace(/ /g, '_')}" 
+                     value="${item.user_count_pos}" min="1" max="${product.cur_count_pos}" 
+                     onchange="updateQuantity('${item.product_name}', ${product.cur_count_pos})">
+              <button onclick="changeQuantity(this, 1, '${item.product_name}', ${product.cur_count_pos})">+</button>
+            </div>
+            <div>Цена: ${product.price.toFixed(2)} руб. × ${item.user_count_pos} = ${itemTotal.toFixed(2)} руб.</div>
+          </div>
+          <div class="cart-item-actions">
+            <button onclick="removeFromCart('${item.product_name}')">Удалить</button>
+          </div>
+        `;
               container.appendChild(itemElement);
             }
           }
 
-          document.getElementById('total-price').textContent = total;
+          document.getElementById('total-price').textContent = total.toFixed(2);
         } catch (error) {
           console.error('Ошибка загрузки корзины:', error);
         }
       }
-
       async function changeQuantity(button, delta, productName, maxQuantity) {
         const input = button.parentElement.querySelector('input');
         let newValue = parseInt(input.value) + delta;

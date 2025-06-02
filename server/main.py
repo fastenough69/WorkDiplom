@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Depends, Body
-from fastapi.responses import JSONResponse, Response
+from fastapi import FastAPI, Depends, Body, UploadFile
+from fastapi.responses import JSONResponse, Response, FileResponse
 import uvicorn
 import asyncio
 from database import *
@@ -38,14 +38,14 @@ async def shutdown():
 async def check_health():
     ...
 
-@app.post("/insert_more_pos")
-async def insert_more_pos():
-    pr_name = ["macbook", "RTX 3060", "RTX 5090", "Samsung Galaxy S27", "Холодильник"]
-    ds = ["fdsdfgdf", "gfdgdfgd", "gjhfgdjdf", "hfdgsfd", "bvncx"]
-    counts = [10, 20, 30, 321, 4324]
-    price = [423423, 756756, 876867, 43244, 56564]
-    for i in range(4):
-        await marketpos_table.insert_into_table(pr_name[i], ds[i], counts[i], Decimal(price[i]))
+# @app.post("/insert_more_pos")
+# async def insert_more_pos():
+#     pr_name = ["macbook", "RTX 3060", "RTX 5090", "Samsung Galaxy S27", "Холодильник"]
+#     ds = ["fdsdfgdf", "gfdgdfgd", "gjhfgdjdf", "hfdgsfd", "bvncx"]
+#     counts = [10, 20, 30, 321, 4324]
+#     price = [423423, 756756, 876867, 43244, 56564]
+#     for i in range(4):
+#         await marketpos_table.insert_into_table(pr_name[i], ds[i], counts[i], Decimal(price[i]))
 
 @app.get("/admins/create")
 async def create_table_admins():
@@ -105,8 +105,7 @@ async def get_user(userId: int):
 async def up_user_info(data = Body()):
     userId = data["id"]
     new_phone = data["phone"]
-    new_balance = data["balance"]
-    await user_table.up_user(int(userId), new_phone, Decimal(new_balance))
+    await user_table.up_user(int(userId), new_phone)
     return {"status": True}
 
 @app.delete("/users/delete")
@@ -143,10 +142,26 @@ async def insert_table_marketpos(product_name: str, description: str, count_pos:
     except:
         return {"status": "false"}
 
+@app.post("/market/insert/picture")
+async def insert_picture(up_file: UploadFile, productId: int):
+    os.makedirs("/MarketPicture", exist_ok=True)
+    file = up_file.file
+    temp = await marketpos_table.get_product_info(productId)
+    market_name = temp["row"][1]
+    with open(f"/MarketPicture/{market_name}.jpeg", "wb") as fl:
+        fl.write(file.read())
+    return {"status": True}
+
 @app.get("/market/get_data")
 async def get_data_market():
     res =  await marketpos_table.get_data()
     return res
+
+@app.get("/market/get/picture")
+async def get_product_picture(productId: int):
+    temp = await marketpos_table.get_product_info(productId)
+    filename = temp["row"][1]
+    return FileResponse(f"/MarketPicture/{filename}.jpeg", media_type="image/jpeg")
 
 @app.get("/market/get_product")
 async def get_product(productId: int):
@@ -235,6 +250,11 @@ async def insert_into_orders_table(data = Body()):
 @app.get("/orders/get_data")
 async def get_all_orders():
     res = await order_table.get_data()
+    return res
+
+@app.get("/orders/get_user_orders")
+async def get_orders_by_user(userId: int):
+    res = await order_table.get_user_orders(userId)
     return res
 
 # @app.get("/orders/get_data/sort_by_date")

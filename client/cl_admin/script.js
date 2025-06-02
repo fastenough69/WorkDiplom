@@ -1,6 +1,24 @@
 // API Configuration
 const API_BASE_URL = 'http://localhost:8001';
 
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2RkZGRkZCIgZD0iTTE5IDVIMTVWM0g5djJINVYyMWgxOVY1TTE5IDE5VjVIMjFWMjFIMTlNMTkgMTcuNjVIMThWMTlIMTdWMTcuNjVIMTdWMTYuNUgxNy41VjE1SDE4LjVWMTYuNUgxOVYxNy42NU0xMyAxOUgxMVYxN0gxM3YyTTEzIDE1SDExVjEzSDEzdjJNMTMgMTFIMTFWOUgxM3YyTTE3IDE1SDE1VjEzSDE3djJNMTcgMTFIMTVWOkgxN3YyTTkgMTVIN1YxM0g5djJNOSAxMUg3VjlIOXYyTTkgMTlIN1YxN0g5djJNNSAxNUgzdjJoMnYtMk01IDExSDNWOWgydjJNNSAxOUgzdjJoMnYtMk0xOSAxMkgyMFYxNEgxOXYtMk0xOSA4SDIwVjEwSDE5VjhaIi8+PC9zdmc+';
+
+// Sorting variables
+let productSort = {
+  column: null,
+  direction: 'asc'
+};
+
+let usersSort = {
+  column: 'id',
+  direction: 'asc'
+};
+
+let ordersSort = {
+  column: 'date',
+  direction: 'desc'
+};
+
 // Common functions
 function checkAuth() {
   const token = getCookie('access-token');
@@ -85,8 +103,24 @@ async function loadUsers() {
     const usersData = data.map(item => ({
       id: item.row[0],
       phone: item.row[1],
-      balance: item.row[2]
     }));
+
+    // Sort users
+    usersData.sort((a, b) => {
+      let valA, valB;
+      
+      if (usersSort.column === 'id') {
+        valA = parseInt(a.id);
+        valB = parseInt(b.id);
+      } else {
+        valA = a[usersSort.column];
+        valB = b[usersSort.column];
+      }
+
+      if (valA < valB) return usersSort.direction === 'asc' ? -1 : 1;
+      if (valA > valB) return usersSort.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
 
     const tableBody = document.querySelector('#usersTable tbody');
     if (!tableBody) {
@@ -101,7 +135,6 @@ async function loadUsers() {
       row.innerHTML = `
         <td>${user.id}</td>
         <td>${user.phone}</td>
-        <td>${user.balance}</td>
         <td>
           <button class="btn edit-btn" data-id="${user.id}">Edit</button>
           <button class="btn delete-btn" data-id="${user.id}">Delete</button>
@@ -109,6 +142,8 @@ async function loadUsers() {
       `;
       tableBody.appendChild(row);
     });
+
+    updateUsersSortIndicators();
 
     document.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', () => openEditUserModal(btn.dataset.id));
@@ -123,6 +158,92 @@ async function loadUsers() {
   }
 }
 
+function updateUsersSortIndicators() {
+  document.querySelectorAll('#usersTable th.sortable').forEach(th => {
+    const originalText = th.getAttribute('data-original-text') || th.textContent.trim();
+    th.innerHTML = originalText;
+
+    if (th.dataset.sort === usersSort.column) {
+      th.innerHTML += usersSort.direction === 'asc' ? ' ↑' : ' ↓';
+    }
+  });
+}
+
+async function searchUsersByPhone() {
+  const searchInput = document.getElementById('searchPhone');
+  const searchBtn = document.getElementById('searchBtn');
+  
+  if (!searchInput || !searchBtn) return;
+
+  const searchTerm = searchInput.value.trim();
+  searchBtn.disabled = true;
+  searchBtn.textContent = 'Поиск...';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/get_users`);
+    if (!response.ok) throw new Error('Failed to fetch users');
+
+    const data = await response.json();
+    let filteredUsers = data
+      .filter(item => item.row[1].includes(searchTerm))
+      .map(item => ({
+        id: item.row[0],
+        phone: item.row[1],
+      }));
+
+    // Apply sorting to search results
+    filteredUsers.sort((a, b) => {
+      let valA, valB;
+      
+      if (usersSort.column === 'id') {
+        valA = parseInt(a.id);
+        valB = parseInt(b.id);
+      } else {
+        valA = a[usersSort.column];
+        valB = b[usersSort.column];
+      }
+
+      if (valA < valB) return usersSort.direction === 'asc' ? -1 : 1;
+      if (valA > valB) return usersSort.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    const tableBody = document.querySelector('#usersTable tbody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+    filteredUsers.forEach(user => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${user.id}</td>
+        <td>${user.phone}</td>
+        <td>
+          <button class="btn edit-btn" data-id="${user.id}">Edit</button>
+          <button class="btn delete-btn" data-id="${user.id}">Delete</button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+
+    updateUsersSortIndicators();
+
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEditUserModal(btn.dataset.id));
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteUser(btn.dataset.id));
+    });
+
+  } catch (error) {
+    console.error('Search failed:', error);
+    showError('Ошибка поиска: ' + error.message);
+  } finally {
+    searchBtn.disabled = false;
+    searchBtn.textContent = 'Найти';
+  }
+}
+
 async function openEditUserModal(userId) {
   try {
     const response = await fetch(`${API_BASE_URL}/users/get_user?userId=${userId}`);
@@ -131,17 +252,15 @@ async function openEditUserModal(userId) {
     const data = await response.json();
     console.log(data)
 
-    let phone, balance;
+    let phone;
     if (Array.isArray(data.row)) {
       phone = data.row[1];
-      balance = data.row[2];
     } else {
       throw new Error('Неверный формат данных пользователя');
     }
 
     document.getElementById('editUserId').value = userId;
     document.getElementById('editPhone').value = phone;
-    document.getElementById('editBalance').value = balance;
 
     document.getElementById('editUserModal').style.display = 'block';
   } catch (error) {
@@ -153,7 +272,6 @@ async function openEditUserModal(userId) {
 async function saveUserChanges() {
   const userId = document.getElementById('editUserId').value;
   const phone = document.getElementById('editPhone').value;
-  const balance = document.getElementById('editBalance').value;
 
   try {
     const response = await fetch(`${API_BASE_URL}/users/update`, {
@@ -164,7 +282,6 @@ async function saveUserChanges() {
       body: JSON.stringify({
         id: userId,
         phone: phone,
-        balance: balance
       })
     });
 
@@ -194,44 +311,85 @@ async function deleteUser(userId) {
 }
 
 // Products management
+async function getProductImageUrl(productId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/market/get/picture?productId=${productId}`);
+    if (response.ok) {
+      return `${API_BASE_URL}/market/get/picture?productId=${productId}`;
+    }
+    return PLACEHOLDER_IMAGE;
+  } catch (error) {
+    console.error('Error checking product image:', error);
+    return PLACEHOLDER_IMAGE;
+  }
+}
+
 async function loadProducts() {
   try {
     const response = await fetch(`${API_BASE_URL}/market/get_data`);
     if (!response.ok) throw new Error('Failed to fetch products');
-
     const products = await response.json();
+
+    if (productSort.column) {
+      products.sort((a, b) => {
+        let valA = a[productSort.column];
+        let valB = b[productSort.column];
+        if (valA < valB) return productSort.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return productSort.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
 
     const tableBody = document.querySelector('#productsTable tbody');
     if (!tableBody) return;
-
     tableBody.innerHTML = '';
 
-    products.forEach(product => {
+    for (const product of products) {
+      const imageUrl = await getProductImageUrl(product.id);
       const row = document.createElement('tr');
       row.innerHTML = `
-                <td>${product.id}</td>
-                <td>${product.product_name}</td>
-                <td>${product.description}</td>
-                <td>${product.price}</td>
-                <td>${product.cur_count_pos}</td>
-                <td>
-                    <button class="btn edit-product-btn" data-id="${product.id}">Edit</button>
-                    <button class="btn delete-product-btn" data-id="${product.id}">Delete</button>
-                </td>
-            `;
+        <td>${product.id}</td>
+        <td>
+          <div class="product-with-image">
+            <img src="${imageUrl}" alt="${product.product_name}" crossorigin="anonymous"
+     onerror="this.src='${PLACEHOLDER_IMAGE}'; this.alt='Изображение недоступно'">
+${product.product_name}
+          </div>
+        </td>
+        <td>${product.description}</td>
+        <td>${product.price}</td>
+        <td>${product.cur_count_pos}</td>
+        <td>
+          <button class="btn edit-btn" data-id="${product.id}">Edit</button>
+          <button class="btn delete-btn" data-id="${product.id}">Delete</button>
+        </td>
+      `;
       tableBody.appendChild(row);
-    });
+    }
 
-    document.querySelectorAll('.edit-product-btn').forEach(btn => {
+    document.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', () => openEditProductModal(btn.dataset.id));
     });
 
-    document.querySelectorAll('.delete-product-btn').forEach(btn => {
+    document.querySelectorAll('.delete-btn').forEach(btn => {
       btn.addEventListener('click', () => deleteProduct(btn.dataset.id));
     });
+
+    updateProductSortIndicators();
   } catch (error) {
     showError('Failed to load products: ' + error.message);
   }
+}
+
+function updateProductSortIndicators() {
+  document.querySelectorAll('#productsTable th.sortable').forEach(th => {
+    const originalText = th.getAttribute('data-original-text') || th.textContent.trim();
+    th.innerHTML = originalText;
+
+    if (th.dataset.sort === productSort.column) {
+      th.innerHTML += productSort.direction === 'asc' ? ' ↑' : ' ↓';
+    }
+  });
 }
 
 function openAddProductModal() {
@@ -241,7 +399,7 @@ function openAddProductModal() {
   document.getElementById('productDescription').value = '';
   document.getElementById('productPrice').value = '';
   document.getElementById('productQuantity').value = '';
-
+  document.getElementById('productImage').value = '';
   document.getElementById('productModal').style.display = 'block';
 }
 
@@ -264,6 +422,7 @@ async function openEditProductModal(productId) {
     document.getElementById('productDescription').value = productData[2] || '';
     document.getElementById('productPrice').value = productData[3] || 0;
     document.getElementById('productQuantity').value = productData[4] || 0;
+    document.getElementById('productImage').value = '';
 
     document.getElementById('productModal').style.display = 'block';
   } catch (error) {
@@ -278,9 +437,11 @@ async function saveProduct() {
   const description = document.getElementById('productDescription').value;
   const price = parseFloat(document.getElementById('productPrice').value);
   const quantity = parseInt(document.getElementById('productQuantity').value);
+  const imageFile = document.getElementById('productImage').files[0];
 
   try {
     if (productId) {
+      // Update existing product
       const updateResponse = await fetch(`${API_BASE_URL}/market/update`, {
         method: 'PUT',
         headers: {
@@ -297,7 +458,13 @@ async function saveProduct() {
 
       const updateResult = await updateResponse.json();
       if (!updateResult.status) throw new Error('Ошибка при обновлении товара');
+
+      // Upload new image if selected
+      if (imageFile) {
+        await uploadProductImage(productId, imageFile);
+      }
     } else {
+      // Create new product
       const url = new URL(`${API_BASE_URL}/market/insert`);
       url.searchParams.append('product_name', name);
       url.searchParams.append('description', description);
@@ -310,12 +477,52 @@ async function saveProduct() {
 
       const insertResult = await insertResponse.json();
       if (insertResult.status !== "ok") throw new Error('Ошибка при добавлении товара');
+
+      // Upload image for new product
+      if (imageFile) {
+        const newProductId = insertResult.id || await getProductIdByName(name);
+        if (newProductId) {
+          await uploadProductImage(newProductId, imageFile);
+        }
+      }
     }
 
     document.getElementById('productModal').style.display = 'none';
     loadProducts();
   } catch (error) {
     showError('Ошибка при сохранении товара: ' + error.message);
+  }
+}
+
+async function uploadProductImage(productId, imageFile) {
+  const formData = new FormData();
+  formData.append('up_file', imageFile);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/market/insert/picture?productId=${productId}`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) throw new Error('Ошибка загрузки изображения');
+
+    return true;
+  } catch (error) {
+    console.error('Ошибка загрузки изображения:', error);
+    throw error;
+  }
+}
+
+async function getProductIdByName(productName) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/market/get_data`);
+    if (!response.ok) throw new Error('Ошибка загрузки товаров');
+    const products = await response.json();
+    const product = products.find(p => p.product_name === productName);
+    return product ? product.id : null;
+  } catch (error) {
+    console.error('Ошибка поиска товара:', error);
+    return null;
   }
 }
 
@@ -350,30 +557,30 @@ async function deleteProduct(productId) {
   }
 }
 
-// Orders management with sorting
-async function loadOrders(sortBy = 'date', sortDirection = 'desc') {
+// Orders management
+async function loadOrders() {
   try {
     const ordersResponse = await fetch(`${API_BASE_URL}/orders/get_data`);
     if (!ordersResponse.ok) throw new Error('Не удалось загрузить заказы');
     let orders = await ordersResponse.json();
 
-    // Сортируем заказы
+    // Sort orders
     orders.sort((a, b) => {
       let valueA, valueB;
-      
-      if (sortBy === 'date') {
+
+      if (ordersSort.column === 'date') {
         valueA = new Date(a.date_orders).getTime();
         valueB = new Date(b.date_orders).getTime();
-      } else if (sortBy === 'total_price') {
+      } else if (ordersSort.column === 'total_price') {
         valueA = a.total_price;
         valueB = b.total_price;
       }
-      
+
       if (valueA < valueB) {
-        return sortDirection === 'asc' ? -1 : 1;
+        return ordersSort.direction === 'asc' ? -1 : 1;
       }
       if (valueA > valueB) {
-        return sortDirection === 'asc' ? 1 : -1;
+        return ordersSort.direction === 'asc' ? 1 : -1;
       }
       return 0;
     });
@@ -393,10 +600,10 @@ async function loadOrders(sortBy = 'date', sortDirection = 'desc') {
           const productRequests = order.productids.map(productId => 
             fetch(`${API_BASE_URL}/market/get_product?productId=${productId}`)
           );
-          
+
           const productResponses = await Promise.all(productRequests);
           const productData = await Promise.all(productResponses.map(r => r.json()));
-          
+
           productNames = productData.map(p => p.row ? p.row[1] : `Товар (ID: ${productId})`);
         } else {
           productNames = ['Нет данных о товарах'];
@@ -426,114 +633,131 @@ async function loadOrders(sortBy = 'date', sortDirection = 'desc') {
         tableBody.appendChild(row);
       }
     }
+
+    updateOrdersSortIndicators();
   } catch (error) {
     console.error('Ошибка загрузки заказов:', error);
     showError('Ошибка загрузки заказов: ' + error.message);
   }
 }
 
+function updateOrdersSortIndicators() {
+  document.querySelectorAll('#ordersTable th.sortable').forEach(th => {
+    const originalText = th.getAttribute('data-original-text') || th.textContent.trim();
+    th.innerHTML = originalText;
+
+    if (th.dataset.sort === ordersSort.column) {
+      th.innerHTML += ordersSort.direction === 'asc' ? ' ↑' : ' ↓';
+    }
+  });
+}
+
 // Initialize the page
 document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
 
-  // Setup login only on login page
+  // --- Login page setup ---
   if (document.getElementById('loginForm')) {
     setupLogin();
   }
 
-  // Setup logout button
+  // --- Logout button setup ---
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', handleLogout);
   }
 
-  // Users page
+  // --- Users page ---
   if (document.getElementById('usersTable')) {
     loadUsers();
 
     const refreshBtn = document.getElementById('refreshUsersBtn');
     if (refreshBtn) refreshBtn.addEventListener('click', loadUsers);
 
-    const editForm = document.getElementById('editUserForm');
-    if (editForm) editForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      saveUserChanges();
-    });
+    const searchBtn = document.getElementById('searchBtn');
+    if (searchBtn) searchBtn.addEventListener('click', searchUsersByPhone);
 
-    const closeBtn = document.querySelector('#editUserModal .close');
-    if (closeBtn) closeBtn.addEventListener('click', () => {
-      document.getElementById('editUserModal').style.display = 'none';
-    });
-  }
-
-  // Orders page with sorting
-// ... (предыдущий код остается без изменений до раздела Orders page)
-
-  // Orders page with sorting
-  if (document.getElementById('ordersTable')) {
-    let currentSort = {
-      column: 'date',
-      direction: 'desc'
-    };
-    
-    const loadSortedOrders = async () => {
-      await loadOrders(currentSort.column, currentSort.direction);
-    };
-    
-    // Функция для обновления индикаторов сортировки
-    const updateSortIndicators = () => {
-      document.querySelectorAll('#ordersTable th.sortable').forEach(th => {
-        // Сохраняем исходный текст заголовка (без стрелок)
-        const originalText = th.getAttribute('data-original-text') || th.textContent.trim();
-        th.setAttribute('data-original-text', originalText);
-        
-        // Очищаем содержимое и добавляем текст + стрелку при необходимости
-        th.innerHTML = originalText;
-        
-        if (th.dataset.sort === currentSort.column) {
-          th.innerHTML += currentSort.direction === 'asc' ? ' ↑' : ' ↓';
+    const searchInput = document.getElementById('searchPhone');
+    if (searchInput) {
+      searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          searchUsersByPhone();
         }
       });
-    };
-    
-    // Инициализация заголовков таблицы
-    document.querySelectorAll('#ordersTable th.sortable').forEach(th => {
-      // Сохраняем исходный текст заголовка при первой загрузке
+    }
+
+    const editForm = document.getElementById('editUserForm');
+    if (editForm) {
+      editForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveUserChanges();
+      });
+    }
+
+    const editModal = document.getElementById('editUserModal');
+    if (editModal) {
+      const closeBtn = editModal.querySelector('.close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          editModal.style.display = 'none';
+        });
+      }
+    }
+
+    // Setup sorting for users table
+    document.querySelectorAll('#usersTable th.sortable').forEach(th => {
       if (!th.getAttribute('data-original-text')) {
         th.setAttribute('data-original-text', th.textContent.trim());
       }
-      
-      // Добавляем обработчик клика
+
       th.addEventListener('click', () => {
         const column = th.dataset.sort;
-        if (currentSort.column === column) {
-          // Меняем направление, если кликнули по той же колонке
-          currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+
+        if (usersSort.column === column) {
+          usersSort.direction = usersSort.direction === 'asc' ? 'desc' : 'asc';
         } else {
-          // Иначе сортируем по новой колонке
-          currentSort.column = column;
-          currentSort.direction = 'asc';
+          usersSort.column = column;
+          usersSort.direction = 'asc';
         }
-        
-        // Обновляем таблицу и индикаторы
-        loadSortedOrders();
-        updateSortIndicators();
+
+        loadUsers();
       });
-    });
-    
-    // Первоначальная загрузка
-    loadSortedOrders();
-    updateSortIndicators();
-    
-    const refreshBtn = document.getElementById('refreshOrdersBtn');
-    if (refreshBtn) refreshBtn.addEventListener('click', () => {
-      loadSortedOrders();
-      updateSortIndicators();
     });
   }
 
-// ... (остальной код остается без изменений)
-  // Market page
+  // --- Orders page ---
+  if (document.getElementById('ordersTable')) {
+    loadOrders();
+
+    const refreshBtn = document.getElementById('refreshOrdersBtn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        loadOrders();
+      });
+    }
+
+    // Setup sorting for orders table
+    document.querySelectorAll('#ordersTable th.sortable').forEach(th => {
+      if (!th.getAttribute('data-original-text')) {
+        th.setAttribute('data-original-text', th.textContent.trim());
+      }
+
+      th.addEventListener('click', () => {
+        const column = th.dataset.sort;
+
+        if (ordersSort.column === column) {
+          ordersSort.direction = ordersSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          ordersSort.column = column;
+          ordersSort.direction = 'asc';
+        }
+
+        loadOrders();
+      });
+    });
+  }
+
+  // --- Market page ---
   if (document.getElementById('productsTable')) {
     loadProducts();
 
@@ -544,18 +768,45 @@ document.addEventListener('DOMContentLoaded', () => {
     if (addBtn) addBtn.addEventListener('click', openAddProductModal);
 
     const productForm = document.getElementById('productForm');
-    if (productForm) productForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      saveProduct();
-    });
+    if (productForm) {
+      productForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveProduct();
+      });
+    }
 
-    const closeBtn = document.querySelector('#productModal .close');
-    if (closeBtn) closeBtn.addEventListener('click', () => {
-      document.getElementById('productModal').style.display = 'none';
+    const productModal = document.getElementById('productModal');
+    if (productModal) {
+      const closeBtn = productModal.querySelector('.close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          productModal.style.display = 'none';
+        });
+      }
+    }
+
+    // Setup sorting for products table
+    document.querySelectorAll('#productsTable th.sortable').forEach(th => {
+      if (!th.getAttribute('data-original-text')) {
+        th.setAttribute('data-original-text', th.textContent.trim());
+      }
+
+      th.addEventListener('click', () => {
+        const column = th.dataset.sort;
+
+        if (productSort.column === column) {
+          productSort.direction = productSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          productSort.column = column;
+          productSort.direction = 'asc';
+        }
+
+        loadProducts();
+      });
     });
   }
 
-  // Close modals when clicking outside
+  // --- Close modals when clicking outside ---
   window.addEventListener('click', (event) => {
     if (event.target.classList.contains('modal')) {
       event.target.style.display = 'none';

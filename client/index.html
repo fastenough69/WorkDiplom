@@ -1,38 +1,113 @@
 <!DOCTYPE html>
 <html lang="ru">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Автозапчасти - Каталог</title>
     <style>
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
-}
-
-body {
   font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
   display: flex;
   flex-direction: column;
-  background-color: #f4f4f4;
-}header {
-  background-color: #333;
-  color: white;
-  padding: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
+
+      header {
+        background-color: #333;
+        color: white;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
       .container {
         flex: 1 0 auto;
         max-width: 1200px;
         margin: 0 auto;
         padding: 1rem;
         display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+
+      /* Левая колонка фильтров */
+      .filters {
+        width: 250px;
+        background: white;
+        padding: 1rem;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+        flex-shrink: 0;
+      }
+
+      .filters h3 {
+        margin-top: 0;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 0.5rem;
+      }
+
+      .filters label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+
+      .filters input[type="number"] {
+        width: 100%;
+        padding: 0.4rem;
+        margin-bottom: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      .filters input[type="checkbox"] {
+        margin-right: 0.5rem;
+        transform: scale(1.2);
+        vertical-align: middle;
+      }
+
+      .filters button {
+        width: 100%;
+        padding: 0.5rem;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        margin-top: 0.5rem;
+      }
+
+      .filters button:hover {
+        background-color: #2980b9;
+      }
+
+      /* Правая колонка товаров */
+      .right-column {
+        flex: 1;
+        display: flex;
         flex-direction: column;
         align-items: center;
       }
+
+      #search-input {
+        width: 100%;
+        max-width: 500px;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        font-size: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
       .products {
         display: flex;
         flex-wrap: wrap;
@@ -40,35 +115,65 @@ body {
         gap: 1rem;
         width: 100%;
       }
+
       .product-card {
         background: white;
         border-radius: 5px;
         padding: 1rem;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         display: flex;
         flex-direction: column;
         width: 250px;
       }
+
+      .product-card .image-container {
+        width: 100%;
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f0f0f0;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+      }
+
+      .product-card .image-container img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+
+      .product-card .no-image {
+        color: #999;
+        font-size: 0.9rem;
+        text-align: center;
+        padding: 1rem;
+      }
+
       .product-card h3 {
         margin-top: 0;
         margin-bottom: 0.5rem;
       }
+
       .product-card .price {
         font-weight: bold;
         color: #e67e22;
         font-size: 1.2rem;
         margin: 0.5rem 0;
       }
+
       .product-card .stock {
         color: #27ae60;
         margin: 0.5rem 0;
       }
+
       .product-card .description {
         color: #666;
         font-size: 0.9rem;
         margin: 0.5rem 0;
         flex-grow: 1;
       }
+
       .product-card button {
         background-color: #3498db;
         color: white;
@@ -78,9 +183,11 @@ body {
         cursor: pointer;
         margin-top: 0.5rem;
       }
+
       .product-card button:hover {
         background-color: #2980b9;
       }
+
       .auth-buttons a {
         color: white;
         text-decoration: none;
@@ -88,12 +195,15 @@ body {
         padding: 0.5rem 1rem;
         border-radius: 3px;
       }
+
       .auth-buttons a.login {
         background-color: #3498db;
       }
+
       .auth-buttons a.register {
         background-color: #2ecc71;
       }
+
       .cart-link {
         color: white;
         text-decoration: none;
@@ -102,11 +212,13 @@ body {
         background-color: #e67e22;
         border-radius: 3px;
       }
+
       .quantity-selector {
         display: flex;
         align-items: center;
         margin: 0.5rem 0;
       }
+
       .quantity-selector input {
         width: 50px;
         padding: 0.3rem;
@@ -115,6 +227,7 @@ body {
         border: 1px solid #ddd;
         border-radius: 3px;
       }
+
       .quantity-selector button {
         background-color: #ddd;
         color: #333;
@@ -127,9 +240,11 @@ body {
         cursor: pointer;
         border-radius: 3px;
       }
+
       .quantity-selector button:hover {
         background-color: #ccc;
       }
+
       footer {
         background-color: #333;
         color: white;
@@ -137,13 +252,16 @@ body {
         padding: 1rem;
         width: 100%;
         flex-shrink: 0;
-      }.footer-content {
+      }
+
+      .footer-content {
         max-width: 1200px;
         margin: 0 auto;
         display: flex;
         justify-content: space-between;
         align-items: center;
       }
+
       .contact-info {
         text-align: right;
       }
@@ -153,41 +271,91 @@ body {
     <header>
       <h1>Магазин автозапчастей</h1>
       <div style="display: flex; align-items: center;">
-        <a href="basket.html" class="cart-link">Корзина (<span id="cart-count">0</span>)</a>
-        <div class="auth-buttons" id="auth-buttons"></div>
+        <a href="basket.html" class="cart-link"
+                              >Корзина (<span id="cart-count">0</span>)</a
+                            >
+                            <div class="auth-buttons" id="auth-buttons"></div>
       </div>
     </header>
 
     <div class="container">
-      <h2>Каталог товаров</h2>
-      <div class="products" id="products-container">
-        <!-- Товары будут загружены через JavaScript -->
-      </div>
+      <aside class="filters">
+        <h3>Фильтры</h3>
+
+        <label for="min-price">Минимальная цена (руб.)</label>
+        <input type="number" id="min-price" min="0" placeholder="0" />
+
+        <label for="max-price">Максимальная цена (руб.)</label>
+        <input type="number" id="max-price" min="0" placeholder="Любая" />
+
+        <label>
+          <input type="checkbox" id="in-stock-only" />
+          Только в наличии
+        </label>
+
+        <button id="apply-filters">Применить</button>
+        <button id="clear-filters" style="margin-top: 0.5rem; background-color: #e74c3c;">Сбросить</button>
+      </aside>
+
+      <main class="right-column">
+        <input
+            type="text"
+            id="search-input"
+            placeholder="Поиск по названию товара..."
+            autocomplete="off"
+            />
+        <h2>Каталог товаров</h2>
+        <div class="products" id="products-container">
+          <!-- Товары будут загружены через JavaScript -->
+        </div>
+      </main>
     </div>
 
     <footer>
       <div class="footer-content">
-        <div class="copyright">
-          &copy; 2023 Автозапчасти. Все права защищены.
-        </div>
+        <div class="copyright">&copy; 2023 Автозапчасти. Все права защищены.</div>
         <div class="contact-info">
-          По всем вопросам: <a href="tel:89201001680" style="color: #3498db; text-decoration: none;">8 (920) 100-16-80</a>
+          По всем вопросам:
+          <a
+              href="tel:89201001680"
+              style="color: #3498db; text-decoration: none"
+              >8 (920) 100-16-80</a
+            >
         </div>
       </div>
     </footer>
 
     <script>
-      document.addEventListener('DOMContentLoaded', async () => {
+      let allProducts = [];
+
+      document.addEventListener("DOMContentLoaded", async () => {
         await checkAuthStatus();
         await loadProducts();
         await updateCartCount();
+
+        const searchInput = document.getElementById("search-input");
+        searchInput.addEventListener("input", onFilterChange);
+
+        document
+          .getElementById("apply-filters")
+          .addEventListener("click", onFilterChange);
+
+        document
+          .getElementById("clear-filters")
+          .addEventListener("click", () => {
+            document.getElementById("min-price").value = "";
+            document.getElementById("max-price").value = "";
+            document.getElementById("in-stock-only").checked = false;
+            document.getElementById("search-input").value = "";
+            renderProducts(allProducts);
+          });
       });
 
       async function checkAuthStatus() {
         try {
-          const authButtons = document.getElementById('auth-buttons');
-          const token = getCookie('access-token');
-          const userPhone = localStorage.getItem('userPhone');
+          const authButtons = document.getElementById("auth-buttons");
+          const token = getCookie("access-token");
+          const userPhone = localStorage.getItem("userPhone");
 
           if (token && userPhone) {
             authButtons.innerHTML = `
@@ -201,87 +369,176 @@ body {
             `;
           }
         } catch (error) {
-          console.error('Ошибка проверки авторизации:', error);
+          console.error("Ошибка проверки авторизации:", error);
         }
       }
 
       function getCookie(name) {
-        // Получаем все куки в виде массива
-        const cookies = document.cookie.split(';');
-
-        // Ищем нужную куку
+        const cookies = document.cookie.split(";");
         for (let cookie of cookies) {
-          // Удаляем пробелы в начале и конце
           const trimmedCookie = cookie.trim();
-
-          // Проверяем начало строки на совпадение с именем куки
           if (trimmedCookie.startsWith(`${name}=`)) {
-            // Декодируем значение и возвращаем
-            return decodeURIComponent(
-              trimmedCookie.substring(name.length + 1)
-            );
+            return decodeURIComponent(trimmedCookie.substring(name.length + 1));
           }
         }
-
-        // Если кука не найдена
         return null;
       }
+
       function logout() {
-        document.cookie = 'access-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        localStorage.removeItem('userPhone');
-        localStorage.removeItem('userId');
+        document.cookie =
+          "access-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+        localStorage.removeItem("userPhone");
+        localStorage.removeItem("userId");
         window.location.reload();
       }
 
       async function loadProducts() {
         try {
-          const response = await fetch('http://localhost:8001/market/get_data');
-          if (!response.ok) throw new Error('Ошибка загрузки товаров');
-          const products = await response.json();
-          const container = document.getElementById('products-container');
-          container.innerHTML = '';
+          const response = await fetch("http://localhost:8001/market/get_data");
+          if (!response.ok) throw new Error("Ошибка загрузки товаров");
+          allProducts = await response.json();
+          renderProducts(allProducts);
+        } catch (error) {
+          console.error("Ошибка загрузки товаров:", error);
+          alert("Не удалось загрузить товары. Попробуйте позже.");
+        }
+      }
 
-          products.forEach(product => {
-            const productCard = document.createElement('div');
-            productCard.className = 'product-card';
-            productCard.innerHTML = `
+      function renderProducts(products) {
+        const container = document.getElementById("products-container");
+        container.innerHTML = "";
+
+        if (products.length === 0) {
+          container.innerHTML = "<p>Товары не найдены.</p>";
+          return;
+        }
+
+        products.forEach((product) => {
+          const productCard = document.createElement("div");
+          productCard.className = "product-card";
+          productCard.innerHTML = `
+            <div class="image-container">
+              <img
+                src="http://localhost:8001/market/get/picture?productId=${product.id}"
+                alt="${product.product_name}"
+                onerror="this.parentNode.innerHTML = '<div class=\'no-image\'>Изображение отсутствует</div>'"
+              />
+            </div>
             <h3>${product.product_name}</h3>
             <div class="price">${product.price} руб.</div>
             <div class="stock">В наличии: ${product.cur_count_pos} шт.</div>
-            <div class="description">${product.description || 'Описание отсутствует'}</div>
+            <div class="description">${
+              product.description || "Описание отсутствует"
+            }</div>
             <div class="quantity-selector">
-              <button onclick="changeQuantity(this, -1, ${product.cur_count_pos})">-</button>
-              <input type="number" id="quantity-${product.product_name.replace(/ /g, '_')}" value="1" min="1" max="${product.cur_count_pos}" onchange="validateQuantity(this, ${product.cur_count_pos})">
-              <button onclick="changeQuantity(this, 1, ${product.cur_count_pos})">+</button>
+              <button onclick="changeQuantity(this, -1, ${
+                product.cur_count_pos
+              })">-</button>
+              <input
+                type="number"
+                id="quantity-${product.product_name.replace(/ /g, "_")}"
+                value="1"
+                min="1"
+                max="${product.cur_count_pos}"
+                onchange="validateQuantity(this, ${product.cur_count_pos})"
+              />
+              <button onclick="changeQuantity(this, 1, ${
+                product.cur_count_pos
+              })">+</button>
             </div>
-            <button onclick="addToCart('${product.product_name.replace(/'/g, "\\'")}', ${product.cur_count_pos})">
-              Добавить в корзину
-              </button>`;
+            <button onclick="addToCart('${
+              product.product_name
+            }', ${product.cur_count_pos})">Добавить в корзину</button>
+          `;
           container.appendChild(productCard);
         });
-      } catch (error) {
-        console.error('Ошибка загрузки товаров:', error);
-        alert('Не удалось загрузить товары. Попробуйте позже.');
-      }
-    }
-
-      function changeQuantity(button, delta, maxQuantity) {
-        const input = button.parentElement.querySelector('input');
-        let newValue = parseInt(input.value) + delta;
-
-        if (newValue < 1) newValue = 1;
-        if (newValue > maxQuantity) newValue = maxQuantity;
-
-        input.value = newValue;
       }
 
-      function validateQuantity(input, maxQuantity) {
+      function onFilterChange() {
+        const searchText = document
+          .getElementById("search-input")
+          .value.toLowerCase();
+
+        const minPriceVal = parseFloat(document.getElementById("min-price").value);
+        const maxPriceVal = parseFloat(document.getElementById("max-price").value);
+        const inStockOnly = document.getElementById("in-stock-only").checked;
+
+        let filtered = allProducts.filter((product) => {
+          const nameMatch = product.product_name
+            .toLowerCase()
+            .includes(searchText);
+
+          const price = parseFloat(product.price);
+
+          const minPriceOk = isNaN(minPriceVal) ? true : price >= minPriceVal;
+          const maxPriceOk = isNaN(maxPriceVal) ? true : price <= maxPriceVal;
+
+          const inStockOk = inStockOnly ? product.cur_count_pos > 0 : true;
+
+          return nameMatch && minPriceOk && maxPriceOk && inStockOk;
+        });
+
+        renderProducts(filtered);
+      }
+
+      function changeQuantity(button, delta, max) {
+        const input = button.parentNode.querySelector("input[type=number]");
+        let currentValue = parseInt(input.value) || 1;
+        currentValue += delta;
+        if (currentValue < 1) currentValue = 1;
+        if (currentValue > max) currentValue = max;
+        input.value = currentValue;
+      }
+
+      function validateQuantity(input, max) {
         let value = parseInt(input.value);
+        if (isNaN(value) || value < 1) value = 1;
+        if (value > max) value = max;
+        input.value = value;
+      }
 
-        if (isNaN(value) || value < 1) {
-          input.value = 1;
-        } else if (value > maxQuantity) {
-          input.value = maxQuantity;
+      async function addToCart(productName, maxCount) {
+        const quantityInput = document.getElementById(
+          `quantity-${productName.replace(/ /g, "_")}`
+        );
+        let quantity = parseInt(quantityInput.value);
+        if (isNaN(quantity) || quantity < 1) quantity = 1;
+        if (quantity > maxCount) quantity = maxCount;
+
+        const token = getCookie("access-token");
+        if (!token) {
+          alert("Пожалуйста, войдите в систему, чтобы добавить товар в корзину.");
+          return;
+        }
+
+        const userId = localStorage.getItem("userId");
+        if (!userId) {
+          alert("Ошибка: ID пользователя не найден. Пожалуйста, войдите снова.");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `http://localhost:8001/basket/insert?userId=${userId}&product_name=${encodeURIComponent(productName)}&cur_count=${quantity}`,
+            {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${token}`
+              }
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Ошибка при добавлении в корзину");
+          }
+
+          const result = await response.json();
+          alert(`Товар "${productName}" добавлен в корзину (${quantity} шт.)`);
+          updateCartCount();
+        } catch (error) {
+          console.error(error);
+          alert("Не удалось добавить товар в корзину: " + error.message);
         }
       }
 
@@ -301,52 +558,14 @@ body {
             }
           });
 
-              if (!response.ok) throw new Error('Ошибка загрузки корзины');
-              const data = await response.json();
-              document.getElementById('cart-count').textContent = data.length || 0;
-            } catch (error) {
-              console.error('Ошибка обновления корзины:', error);
-            }
-          }
-
-            async function addToCart(productName, maxQuantity) {
-              const token = getCookie('access-token');
-              const userId = localStorage.getItem('userId');
-              const quantityInput = document.getElementById(`quantity-${productName.replace(/ /g, '_')}`);
-              let quantity = parseInt(quantityInput.value);
-
-              // Проверка корректности количества
-              if (isNaN(quantity)) quantity = 1;
-              if (quantity < 1) quantity = 1;
-              if (quantity > maxQuantity) quantity = maxQuantity;
-
-              if (!token || !userId) {
-                alert('Для добавления товаров в корзину необходимо авторизоваться');
-                window.location.href = 'login.html';
-                return;
-              }
-
-              try {
-                const encodedProductName = encodeURIComponent(productName);
-                const response = await fetch(`http://localhost:8001/basket/insert?userId=${userId}&product_name=${encodedProductName}&cur_count=${quantity}`, {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${token}`
-                  }
-                });
-
-                const result = await response.json();
-                if (result.status) {
-                  alert(`Товар "${productName}" добавлен в корзину (${quantity} шт.)!`);
-                  await updateCartCount();
-                } else {
-                  alert('Ошибка при добавлении товара в корзину: ' + (result.message || ''));
-                }
-              } catch (error) {
-                console.error('Ошибка добавления в корзину:', error);
-                alert('Ошибка при добавлении товара в корзину');
-              }
-            }
+          if (!response.ok) throw new Error('Ошибка загрузки корзины');
+          const data = await response.json();
+          document.getElementById('cart-count').textContent = data.length || 0;
+        } catch (error) {
+          console.error('Ошибка обновления корзины:', error);
+        }
+      }
     </script>
   </body>
 </html>
+

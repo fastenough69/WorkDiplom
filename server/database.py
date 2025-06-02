@@ -86,7 +86,7 @@ class TableUsers(Table):
         
     async def up_user(self, userId: int, new_phone: str):
         async with pool.acquire() as conn:
-            await conn.execute(""" UPDATE users SET phone = $1 WHERE id = $3 """, new_phone, userId)
+            await conn.execute(""" UPDATE users SET phone = $1 WHERE id = $2 """, new_phone, userId)
 
     async def check_user(self, phone: str, passwd: str) -> bool:
         result = False
@@ -156,7 +156,9 @@ class TableMarketPosition(Table):
 
     async def create_table(self):
         async with pool.acquire() as conn:
-            await conn.execute(""" CREATE TABLE IF NOT EXISTS marketPos (id SERIAL PRIMARY KEY, product_name TEXT, description VARCHAR(100), cur_count_pos INTEGER, price numeric) """)
+            await conn.execute(""" CREATE TABLE IF NOT EXISTS marketPos 
+                               (id SERIAL PRIMARY KEY, product_name TEXT, description VARCHAR(100), 
+                               cur_count_pos INTEGER, price numeric) """)
 
     async def insert_into_table(self, product_name: str, description: str, count_pos: int, price: Decimal):
         async with pool.acquire() as conn:
@@ -217,6 +219,11 @@ class TableOrders(Table):
     async def get_data(self):
         async with pool.acquire() as conn:
             res = await conn.fetch(""" SELECT * FROM orders  """)
+            return res
+
+    async def get_user_orders(self, userId: int):
+        async with pool.acquire() as conn:
+            res = await conn.fetch(""" SELECT (productIds, total_price, date_orders) FROM orders """)
             return res
 
     # async def sort_by_date(self):
