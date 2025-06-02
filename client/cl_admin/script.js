@@ -328,20 +328,50 @@ async function loadProducts() {
   try {
     const response = await fetch(`${API_BASE_URL}/market/get_data`);
     if (!response.ok) throw new Error('Failed to fetch products');
-    const products = await response.json();
+    
+    const data = await response.json();
+    console.log('API Response:', data); // Для отладки
+    
+    // Обработка разных форматов ответа
+    let products = [];
+    if (Array.isArray(data)) {
+      products = data;
+    } else if (data.rows) {
+      products = data.rows;
+    } else if (data.products) {
+      products = data.products;
+    } else {
+      throw new Error('Unexpected API response format');
+    }
 
+    if (products.length === 0) {
+      console.warn('No products received from API');
+      return;
+    }
+
+    // Сортировка
     if (productSort.column) {
       products.sort((a, b) => {
-        let valA = a[productSort.column];
-        let valB = b[productSort.column];
-        if (valA < valB) return productSort.direction === 'asc' ? -1 : 1;
-        if (valA > valB) return productSort.direction === 'asc' ? 1 : -1;
+        // Унифицированные названия полей
+        const aValue = a[productSort.column] || 
+                      (productSort.column === 'product_name' ? a.name : 
+                       productSort.column === 'cur_count_pos' ? a.quantity : null);
+        const bValue = b[productSort.column] || 
+                      (productSort.column === 'product_name' ? b.name : 
+                       productSort.column === 'cur_count_pos' ? b.quantity : null);
+        
+        if (aValue < bValue) return productSort.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return productSort.direction === 'asc' ? 1 : -1;
         return 0;
       });
     }
 
     const tableBody = document.querySelector('#productsTable tbody');
-    if (!tableBody) return;
+    if (!tableBody) {
+      console.error('Table body not found');
+      return;
+    }
+    
     tableBody.innerHTML = '';
 
     for (const product of products) {
@@ -351,14 +381,14 @@ async function loadProducts() {
         <td>${product.id}</td>
         <td>
           <div class="product-with-image">
-            <img src="${imageUrl}" alt="${product.product_name}" crossorigin="anonymous"
-     onerror="this.src='${PLACEHOLDER_IMAGE}'; this.alt='Изображение недоступно'">
-${product.product_name}
+            <img src="${imageUrl}" alt="${product.product_name || product.name || 'No name'}" 
+                 onerror="this.src='${PLACEHOLDER_IMAGE}'">
+            ${product.product_name || product.name || 'No name'}
           </div>
         </td>
-        <td>${product.description}</td>
-        <td>${product.price}</td>
-        <td>${product.cur_count_pos}</td>
+        <td>${product.description || ''}</td>
+        <td>${product.price || 0}</td>
+        <td>${product.cur_count_pos || product.quantity || 0}</td>
         <td>
           <button class="btn edit-btn" data-id="${product.id}">Edit</button>
           <button class="btn delete-btn" data-id="${product.id}">Delete</button>
@@ -367,6 +397,7 @@ ${product.product_name}
       tableBody.appendChild(row);
     }
 
+    // Добавьте обработчики для кнопок
     document.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', () => openEditProductModal(btn.dataset.id));
     });
@@ -377,9 +408,110 @@ ${product.product_name}
 
     updateProductSortIndicators();
   } catch (error) {
+    console.error('Failed to load products:', error);
     showError('Failed to load products: ' + error.message);
   }
 }
+
+async function searchProductsByName() {
+  const searchInput = document.getElementById('searchProduct');
+  const searchBtn = document.getElementById('searchProductBtn');
+
+  if (!searchInput || !searchBtn) return;
+
+  const searchTerm = searchInput.value.trim().toLowerCase();
+  searchBtn.disabled = true;
+  searchBtn.textContent = 'Searching...';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/market/get_data`);
+    if (!response.ok) throw new Error('Failed to fetch products');
+
+    const data = await response.json();
+
+    let products = [];
+    if (Array.isArray(data)) {
+      products = data;
+    } else if (data.rows) {
+      products = data.rows;
+    } else if (data.products) {
+      products = data.products;
+    } else {
+      throw new Error('Unexpected API response format');
+    }
+
+    // Фильтрация по названию товара
+    const filteredProducts = products.filter(product => {
+      const productName = (product.product_name || product.name || '').toLowerCase();
+      return productName.includes(searchTerm);
+    });
+
+    // Применяем сортировку к отфильтрованным товарам
+    if (productSort.column) {
+      filteredProducts.sort((a, b) => {
+        const aValue = a[productSort.column] ||
+                      (productSort.column === 'product_name' ? a.name :
+                       productSort.column === 'cur_count_pos' ? a.quantity : null);
+        const bValue = b[productSort.column] ||
+                      (productSort.column === 'product_name' ? b.name :
+                       productSort.column === 'cur_count_pos' ? b.quantity : null);
+
+        if (aValue < bValue) return productSort.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return productSort.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    const tableBody = document.querySelector('#productsTable tbody');
+    if (!tableBody) {
+      console.error('Table body not found');
+      return;
+    }
+
+    tableBody.innerHTML = '';
+
+    for (const product of filteredProducts) {
+      const imageUrl = await getProductImageUrl(product.id);
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${product.id}</td>
+        <td>
+          <div class="product-with-image">
+            <img src="${imageUrl}" alt="${product.product_name || product.name || 'No name'}"
+                 onerror="this.src='${PLACEHOLDER_IMAGE}'">
+            ${product.product_name || product.name || 'No name'}
+          </div>
+        </td>
+        <td>${product.description || ''}</td>
+        <td>${product.price || 0}</td>
+        <td>${product.cur_count_pos || product.quantity || 0}</td>
+        <td>
+          <button class="btn edit-btn" data-id="${product.id}">Edit</button>
+          <button class="btn delete-btn" data-id="${product.id}">Delete</button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    }
+
+    // Добавляем обработчики для кнопок
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEditProductModal(btn.dataset.id));
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteProduct(btn.dataset.id));
+    });
+
+    updateProductSortIndicators();
+  } catch (error) {
+    console.error('Search failed:', error);
+    showError('Search error: ' + error.message);
+  } finally {
+    searchBtn.disabled = false;
+    searchBtn.textContent = 'Search';
+  }
+}
+
 
 function updateProductSortIndicators() {
   document.querySelectorAll('#productsTable th.sortable').forEach(th => {
@@ -840,7 +972,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Orders page ---
 // --- Orders page ---
 if (document.getElementById('ordersTable')) {
   loadOrders();
@@ -888,6 +1019,55 @@ if (document.getElementById('ordersTable')) {
       } else {
         loadOrders();
       }
+    });
+  });
+}
+
+// Добавьте в конец файла script.js
+if (document.getElementById('productsTable')) {
+  // Загрузка товаров при открытии страницы
+  loadProducts();
+
+  // Обработчики кнопок
+  document.getElementById('addProductBtn')?.addEventListener('click', openAddProductModal);
+  document.getElementById('refreshProductsBtn')?.addEventListener('click', loadProducts);
+  document.getElementById('searchProductBtn')?.addEventListener('click', searchProductsByName);
+
+   document.getElementById('searchProduct')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      searchProductsByName();
+    }
+  });
+
+
+  // Обработчик формы
+  document.getElementById('productForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    saveProduct();
+  });
+
+  // Закрытие модального окна
+  document.querySelector('#productModal .close')?.addEventListener('click', function() {
+    document.getElementById('productModal').style.display = 'none';
+  });
+
+  // Сортировка
+  document.querySelectorAll('#productsTable th.sortable').forEach(th => {
+    if (!th.getAttribute('data-original-text')) {
+      th.setAttribute('data-original-text', th.textContent.trim());
+    }
+
+    th.addEventListener('click', () => {
+      const column = th.dataset.sort;
+
+      if (productSort.column === column) {
+        productSort.direction = productSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        productSort.column = column;
+        productSort.direction = 'asc';
+      }
+
+      loadProducts();
     });
   });
 }
