@@ -223,7 +223,7 @@ class TableOrders(Table):
 
     async def get_user_orders(self, userId: int):
         async with pool.acquire() as conn:
-            res = await conn.fetch(""" SELECT (productIds, total_price, date_orders) FROM orders """)
+            res = await conn.fetch(""" SELECT * FROM orders WHERE userId = $1 """, userId)
             return res
 
     # async def sort_by_date(self):

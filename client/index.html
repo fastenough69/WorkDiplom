@@ -265,6 +265,38 @@ body {
       .contact-info {
         text-align: right;
       }
+
+      /* ... другие стили ... */
+
+      .user-phone-btn {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        margin-left: 1rem;
+        transition: background-color 0.2s;
+      }
+
+      .user-phone-btn:hover {
+        background-color: #2980b9;
+      }
+
+      .logout-btn {
+        margin-left: 1rem;
+        color: white;
+        background-color: #e74c3c;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        text-decoration: none;
+        transition: background-color 0.2s;
+      }
+
+      .logout-btn:hover {
+        background-color: #c0392b;
+      }
     </style>
   </head>
   <body>
@@ -359,7 +391,7 @@ body {
 
           if (token && userPhone) {
             authButtons.innerHTML = `
-              <span style="color: white; margin-left: 1rem;">${userPhone}</span>
+              <button class="user-phone-btn" onclick="window.location.href='orders.html'">${userPhone}</button>
               <a href="#" class="login" onclick="logout()">Выйти</a>
             `;
           } else {
@@ -447,12 +479,12 @@ body {
               })">+</button>
             </div>
             <button onclick="addToCart('${
-              product.product_name
-            }', ${product.cur_count_pos})">Добавить в корзину</button>
+                    product.product_name
+                    }', ${product.cur_count_pos})">Добавить в корзину</button>
           `;
           container.appendChild(productCard);
         });
-      }
+}
 
       function onFilterChange() {
         const searchText = document
@@ -473,7 +505,7 @@ body {
           const minPriceOk = isNaN(minPriceVal) ? true : price >= minPriceVal;
           const maxPriceOk = isNaN(maxPriceVal) ? true : price <= maxPriceVal;
 
-          const inStockOk = inStockOnly ? product.cur_count_pos > 0 : true;
+                    const inStockOk = inStockOnly ? product.cur_count_pos > 0 : true;
 
           return nameMatch && minPriceOk && maxPriceOk && inStockOk;
         });
@@ -486,14 +518,14 @@ body {
         let currentValue = parseInt(input.value) || 1;
         currentValue += delta;
         if (currentValue < 1) currentValue = 1;
-        if (currentValue > max) currentValue = max;
+                    if (currentValue > max) currentValue = max;
         input.value = currentValue;
       }
 
       function validateQuantity(input, max) {
         let value = parseInt(input.value);
         if (isNaN(value) || value < 1) value = 1;
-        if (value > max) value = max;
+                    if (value > max) value = max;
         input.value = value;
       }
 
@@ -503,7 +535,7 @@ body {
         );
         let quantity = parseInt(quantityInput.value);
         if (isNaN(quantity) || quantity < 1) quantity = 1;
-        if (quantity > maxCount) quantity = maxCount;
+                    if (quantity > maxCount) quantity = maxCount;
 
         const token = getCookie("access-token");
         if (!token) {

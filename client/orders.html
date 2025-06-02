@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Автозапчасти - Мои заказы</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+      }
+      header {
+        background-color: #333;
+        color: white;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+      .orders-container {
+        background: white;
+        border-radius: 5px;
+        padding: 1rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .order-card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #eee;
+        border-radius: 5px;
+      }
+      .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+      .order-date {
+        color: #666;
+        font-size: 0.9rem;
+      }
+      .order-total {
+        font-weight: bold;
+        color: #e67e22;
+      }
+      .order-status {
+        padding: 0.3rem 0.6rem;
+        border-radius: 3px;
+        font-size: 0.8rem;
+        color: white;
+      }
+      .status-execute {
+        background-color: #2ecc71;
+      }
+      .status-pending {
+        background-color: #f39c12;
+      }
+      .status-canceled {
+        background-color: #e74c3c;
+      }
+      .order-products {
+        margin-top: 0.5rem;
+      }
+      .product-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.3rem 0;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .product-item:last-child {
+        border-bottom: none;
+      }
+      .empty-orders-message {
+        text-align: center;
+        padding: 2rem;
+        color: #666;
+        font-size: 1.1rem;
+      }
+      .back-to-catalog {
+        color: white;
+        background-color: #3498db;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        text-decoration: none;
+        transition: background-color 0.2s;
+      }
+      .back-to-catalog:hover {
+        background-color: #2980b9;
+      }
+      .back-link {
+        display: inline-block;
+        margin-top: 1rem;
+        color: #3498db;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        background-color: white;
+        border-radius: 4px;
+        border: 1px solid #3498db;
+        transition: all 0.2s;
+      }
+      .back-link:hover {
+        background-color: #3498db;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Автозапчасти</h1>
+      <div>
+        <a href="index.html" class="back-to-catalog">Назад в каталог</a>
+        <span id="auth-section" style="margin-left: 1rem;"></span>
+      </div>
+    </header>
+
+    <div class="container">
+      <h2>Мои заказы</h2>
+      <div class="orders-container" id="orders-container">
+        <!-- Заказы будут загружены через JavaScript -->
+      </div>
+      <a href="index.html" class="back-link">← Вернуться к покупкам</a>
+    </div>
+
+    <script>
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+      }
+
+      function logout() {
+        document.cookie = 'access-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        localStorage.removeItem('userPhone');
+        window.location.reload();
+      }
+
+      function updateAuthSection() {
+        const authSection = document.getElementById('auth-section');
+        const token = getCookie('access-token');
+        const userPhone = localStorage.getItem('userPhone');
+
+        if (token && userPhone) {
+          authSection.innerHTML = `<span style="color: white;">${userPhone}</span>
+                                   <a href="#" onclick="logout()" style="margin-left: 1rem; color: white; background-color: #e74c3c; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none;">Выйти</a>`;
+        }
+      }
+
+      async function getUserId() {
+        const userPhone = localStorage.getItem('userPhone');
+        if (!userPhone) return null;
+
+        const idResponse = await fetch(`http://localhost:8001/users/get_id?phone=${encodeURIComponent(userPhone)}`);
+        const idData = await idResponse.json();
+        return idData.id;
+      }
+
+      function getStatusClass(status) {
+        switch(status.toLowerCase()) {
+          case 'execute':
+            return 'status-execute';
+          case 'pending':
+            return 'status-pending';
+          case 'canceled':
+            return 'status-canceled';
+          default:
+            return '';
+        }
+      }
+
+      function getStatusText(status) {
+        switch(status.toLowerCase()) {
+          case 'execute':
+            return 'Выполнен';
+          case 'pending':
+            return 'В обработке';
+          case 'canceled':
+            return 'Отменён';
+          default:
+            return status;
+        }
+      }
+
+      async function loadOrders() {
+        try {
+          const token = getCookie('access-token');
+          if (!token) {
+            window.location.href = 'login.html';
+            return;
+          }
+
+          const userId = await getUserId();
+          if (!userId) {
+            alert('Ошибка идентификации пользователя');
+            return;
+          }
+
+          const response = await fetch(`http://localhost:8001/orders/get_user_orders?userId=${userId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          const orders = await response.json();
+
+          const container = document.getElementById('orders-container');
+          container.innerHTML = '';
+
+          if (orders.length === 0) {
+            container.innerHTML = '<p class="empty-orders-message">У вас пока нет заказов</p>';
+            return;
+          }
+
+          // Получаем информацию о продуктах для отображения названий
+          const productsResponse = await fetch('http://localhost:8001/market/get_data');
+          const products = await productsResponse.json();
+
+          for (const order of orders) {
+            const date = new Date(order.date_orders);
+            const productIds = order.productids || [];
+            const totalPrice = order.total_price || 0;
+            const status = order.status || 'pending';
+
+            const orderElement = document.createElement('div');
+            orderElement.className = 'order-card';
+            
+            // Форматируем дату
+            const formattedDate = date.toLocaleDateString('ru-RU', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+
+            // Создаем список продуктов
+            let productsHtml = '';
+            for (const productId of productIds) {
+              const product = products.find(p => p.id === productId);
+              if (product) {
+                productsHtml += `
+                  <div class="product-item">
+                    <span>${product.product_name}</span>
+                    <span>${product.price} руб.</span>
+                  </div>
+                `;
+              }
+            }
+
+            orderElement.innerHTML = `
+              <div class="order-header">
+                <div>
+                  <span class="order-date">${formattedDate}</span>
+                  <span>Заказ #${order.id}</span>
+                </div>
+                <div>
+                  <span class="order-total">${totalPrice.toLocaleString('ru-RU')} руб.</span>
+                  <span class="order-status ${getStatusClass(status)}">${getStatusText(status)}</span>
+                </div>
+              </div>
+              <div class="order-products">
+                ${productsHtml}
+              </div>
+            `;
+            container.appendChild(orderElement);
+          }
+        } catch (error) {
+          console.error('Ошибка загрузки заказов:', error);
+          alert('Не удалось загрузить заказы. Попробуйте позже.');
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        updateAuthSection();
+        loadOrders();
+      });
+    </script>
+  </body>
+</html>

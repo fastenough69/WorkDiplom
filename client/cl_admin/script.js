@@ -641,6 +641,121 @@ async function loadOrders() {
   }
 }
 
+async function searchOrdersByPhone() {
+  const searchInput = document.getElementById('searchPhone');
+  const searchBtn = document.getElementById('searchBtn');
+
+  if (!searchInput || !searchBtn) return;
+
+  const searchTerm = searchInput.value.trim();
+  searchBtn.disabled = true;
+  searchBtn.textContent = 'Searching...';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/orders/get_data`);
+    if (!response.ok) throw new Error('Failed to fetch orders');
+
+    const orders = await response.json();
+    let filteredOrders = [];
+
+    // Фильтрация заказов по номеру телефона
+    for (const order of orders) {
+      try {
+        const userResponse = await fetch(`${API_BASE_URL}/users/get_user?userId=${order.userid}`);
+        const userData = await userResponse.json();
+        const userPhone = userData.row ? userData.row[1] : '';
+
+        if (userPhone.includes(searchTerm)) {
+          filteredOrders.push(order);
+        }
+      } catch (error) {
+        console.error(`Error processing order ${order.id}:`, error);
+      }
+    }
+
+    // Сортировка отфильтрованных заказов
+    filteredOrders.sort((a, b) => {
+      let valueA, valueB;
+
+      if (ordersSort.column === 'date') {
+        valueA = new Date(a.date_orders).getTime();
+        valueB = new Date(b.date_orders).getTime();
+      } else if (ordersSort.column === 'total_price') {
+        valueA = a.total_price;
+        valueB = b.total_price;
+      } else if (ordersSort.column === 'id') {
+        valueA = a.id;
+        valueB = b.id;
+      }
+
+      if (valueA < valueB) {
+        return ordersSort.direction === 'asc' ? -1 : 1;
+      }
+      if (valueA > valueB) {
+        return ordersSort.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    const tableBody = document.querySelector('#ordersTable tbody');
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+
+    for (const order of filteredOrders) {
+      try {
+        const userResponse = await fetch(`${API_BASE_URL}/users/get_user?userId=${order.userid}`);
+        const userData = await userResponse.json();
+        const userPhone = userData.row ? userData.row[1] : 'Unknown';
+
+        let productNames = [];
+        if (Array.isArray(order.productids)) {
+          const productRequests = order.productids.map(productId =>
+            fetch(`${API_BASE_URL}/market/get_product?productId=${productId}`)
+          );
+
+          const productResponses = await Promise.all(productRequests);
+          const productData = await Promise.all(productResponses.map(r => r.json()));
+
+          productNames = productData.map(p => p.row ? p.row[1] : `Product (ID: ${productId})`);
+        } else {
+          productNames = ['No product data'];
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${order.id}</td>
+          <td>${userPhone}</td>
+          <td>${productNames.join(', ')}</td>
+          <td>${order.total_price.toFixed(2)}</td>
+          <td>${order.status}</td>
+          <td>${new Date(order.date_orders).toLocaleString()}</td>
+        `;
+        tableBody.appendChild(row);
+      } catch (error) {
+        console.error(`Error processing order ${order.id}:`, error);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${order.id}</td>
+          <td>Load error</td>
+          <td>Load error</td>
+          <td>${order.total_price?.toFixed(2) || 'N/A'}</td>
+          <td>${order.status || 'N/A'}</td>
+          <td>${order.date_orders ? new Date(order.date_orders).toLocaleString() : 'N/A'}</td>
+        `;
+        tableBody.appendChild(row);
+      }
+    }
+
+    updateOrdersSortIndicators();
+  } catch (error) {
+    console.error('Search error:', error);
+    showError('Search error: ' + error.message);
+  } finally {
+    searchBtn.disabled = false;
+    searchBtn.textContent = 'Search';
+  }
+}
+
 function updateOrdersSortIndicators() {
   document.querySelectorAll('#ordersTable th.sortable').forEach(th => {
     const originalText = th.getAttribute('data-original-text') || th.textContent.trim();
@@ -726,86 +841,56 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Orders page ---
-  if (document.getElementById('ordersTable')) {
-    loadOrders();
+// --- Orders page ---
+if (document.getElementById('ordersTable')) {
+  loadOrders();
 
-    const refreshBtn = document.getElementById('refreshOrdersBtn');
-    if (refreshBtn) {
-      refreshBtn.addEventListener('click', () => {
-        loadOrders();
-      });
-    }
-
-    // Setup sorting for orders table
-    document.querySelectorAll('#ordersTable th.sortable').forEach(th => {
-      if (!th.getAttribute('data-original-text')) {
-        th.setAttribute('data-original-text', th.textContent.trim());
-      }
-
-      th.addEventListener('click', () => {
-        const column = th.dataset.sort;
-
-        if (ordersSort.column === column) {
-          ordersSort.direction = ordersSort.direction === 'asc' ? 'desc' : 'asc';
-        } else {
-          ordersSort.column = column;
-          ordersSort.direction = 'asc';
-        }
-
-        loadOrders();
-      });
+  const refreshBtn = document.getElementById('refreshOrdersBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      loadOrders();
     });
   }
 
-  // --- Market page ---
-  if (document.getElementById('productsTable')) {
-    loadProducts();
+  const searchBtn = document.getElementById('searchBtn');
+  if (searchBtn) {
+    searchBtn.addEventListener('click', searchOrdersByPhone);
+  }
 
-    const refreshBtn = document.getElementById('refreshProductsBtn');
-    if (refreshBtn) refreshBtn.addEventListener('click', loadProducts);
-
-    const addBtn = document.getElementById('addProductBtn');
-    if (addBtn) addBtn.addEventListener('click', openAddProductModal);
-
-    const productForm = document.getElementById('productForm');
-    if (productForm) {
-      productForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        saveProduct();
-      });
-    }
-
-    const productModal = document.getElementById('productModal');
-    if (productModal) {
-      const closeBtn = productModal.querySelector('.close');
-      if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-          productModal.style.display = 'none';
-        });
+  const searchInput = document.getElementById('searchPhone');
+  if (searchInput) {
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        searchOrdersByPhone();
       }
-    }
-
-    // Setup sorting for products table
-    document.querySelectorAll('#productsTable th.sortable').forEach(th => {
-      if (!th.getAttribute('data-original-text')) {
-        th.setAttribute('data-original-text', th.textContent.trim());
-      }
-
-      th.addEventListener('click', () => {
-        const column = th.dataset.sort;
-
-        if (productSort.column === column) {
-          productSort.direction = productSort.direction === 'asc' ? 'desc' : 'asc';
-        } else {
-          productSort.column = column;
-          productSort.direction = 'asc';
-        }
-
-        loadProducts();
-      });
     });
   }
 
+  // Setup sorting for orders table
+  document.querySelectorAll('#ordersTable th.sortable').forEach(th => {
+    if (!th.getAttribute('data-original-text')) {
+      th.setAttribute('data-original-text', th.textContent.trim());
+    }
+
+    th.addEventListener('click', () => {
+      const column = th.dataset.sort;
+
+      if (ordersSort.column === column) {
+        ordersSort.direction = ordersSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        ordersSort.column = column;
+        ordersSort.direction = 'asc';
+      }
+
+      // Применяем текущий поиск при сортировке
+      if (document.getElementById('searchPhone').value.trim()) {
+        searchOrdersByPhone();
+      } else {
+        loadOrders();
+      }
+    });
+  });
+}
   // --- Close modals when clicking outside ---
   window.addEventListener('click', (event) => {
     if (event.target.classList.contains('modal')) {

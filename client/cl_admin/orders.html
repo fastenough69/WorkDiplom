@@ -22,20 +22,21 @@
     <main>
       <div class="actions">
         <button id="refreshOrdersBtn" class="btn">Refresh List</button>
+        <input type="text" id="searchPhone" placeholder="Search by phone number">
+        <button id="searchBtn" class="btn">Search</button>
       </div>
       <table id="ordersTable">
-        <!-- Измененный фрагмент таблицы в orders.html -->
         <thead>
           <tr>
-            <th>OrderID</th>
+            <th class="sortable" data-sort="id">OrderID</th>
             <th>User Phone</th>
             <th>Products</th>
             <th class="sortable" data-sort="total_price">Total Price</th>
             <th>Status</th>
             <th class="sortable" data-sort="date">Date</th>
           </tr>
-        </thead
-        ><tbody>
+        </thead>
+        <tbody>
           <!-- Orders will be loaded here -->
         </tbody>
       </table>

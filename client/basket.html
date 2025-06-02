@@ -145,6 +145,36 @@ body {
       .back-to-catalog:hover {
         background-color: #2980b9;
       }
+
+      .user-phone-btn {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-left: 1rem;
+    transition: background-color 0.2s;
+  }
+
+  .user-phone-btn:hover {
+    background-color: #2980b9;
+  }
+
+  .logout-btn {
+    margin-left: 1rem;
+    color: white;
+    background-color: #e74c3c;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+  }
+
+  .logout-btn:hover {
+    background-color: #c0392b;
+  }
     </style>
   </head>
   <body>
@@ -187,8 +217,7 @@ body {
         const userPhone = localStorage.getItem('userPhone');
 
         if (token && userPhone) {
-          authSection.innerHTML = `<span style="color: white;">${userPhone}</span>
-                                   <a href="#" onclick="logout()" style="margin-left: 1rem; color: white; background-color: #e74c3c; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none;">Выйти</a>`;
+          authSection.innerHTML = `<button class="user-phone-btn" onclick="window.location.href='orders.html'">${userPhone}</button>                                   <a href="#" onclick="logout()" style="margin-left: 1rem; color: white; background-color: #e74c3c; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none;">Выйти</a>`;
         }
       }
 
