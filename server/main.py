@@ -29,6 +29,12 @@ auth.handle_errors(app)
 @app.on_event("startup")
 async def startup():
     await connect()
+    await admin_table.create_table()
+    await user_table.create_table()
+    await marketpos_table.create_table()
+    await basket_table.create_table()
+    await order_table.create_table()
+
 
 @app.on_event("shutdown")
 async def shutdown():
