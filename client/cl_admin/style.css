@@ -58,7 +58,6 @@ main {
     background-color: #3498db;
 }
 
-/* Login Page */
 .login-container {
     max-width: 400px;
     margin: 100px auto;
@@ -90,7 +89,6 @@ main {
     margin-top: 10px;
 }
 
-/* Tables */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -123,7 +121,6 @@ tr:hover {
     margin-bottom: 20px;
 }
 
-/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -167,7 +164,6 @@ textarea {
     min-height: 100px;
 }
 
-/* Добавим в style.css */
 th.sortable {
     cursor: pointer;
     position: relative;
@@ -178,7 +174,6 @@ th.sortable:hover {
     background-color: #3498db;
 }
 
-/* Добавить в конец файла style.css */
 .form-group input[type="file"] {
     width: 100%;
     padding: 8px;
@@ -193,7 +188,6 @@ th.sortable:hover {
     border-color: #2980b9;
 }
 
-/* Добавить в конец файла style.css */
 .product-with-image {
   display: flex;
   align-items: center;
@@ -208,14 +202,12 @@ th.sortable:hover {
   border: 1px solid #ddd;
 }
 
-/* Стиль для заглушки */
 img[src="placeholder.jpg"] {
   opacity: 0.6;
   background-color: #f0f0f0;
   padding: 5px;
 }
 
-/* Стили для изображений товаров */
 .product-with-image {
   display: flex;
   align-items: center;
@@ -231,13 +223,11 @@ img[src="placeholder.jpg"] {
   background-color: #f5f5f5;
 }
 
-/* Стиль для заглушки (уже встроенной в base64) */
 .product-with-image img[src^="data:image/svg+xml"] {
   background-color: #f9f9f9;
   padding: 5px;
 }
 
-/* Добавьте в конец файла style.css */
 .btn {
   position: relative;
   z-index: 1;

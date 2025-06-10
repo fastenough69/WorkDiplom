@@ -6,11 +6,13 @@ import os
 import abc
 import bcrypt
 
+dotenv.load_dotenv()
+
 pool = None
 
 async def connect():
     global pool
-    config = {"user": "admin", "password": "856901", "database":"AppMarketAutodetails", "host": "db"}
+    config = {"user": os.getenv("DB_USER"), "password": os.getenv("DB_PASSWORD"), "database": os.getenv("DB_NAME"), "host": "db"}
     pool = await asyncpg.create_pool(**config)
 
 async def destroy_conn():
@@ -20,16 +22,12 @@ class Table(abc.ABC):
     def __init__(self, name_table: str):
         self.nametable = name_table
 
+    @abc.abstractmethod
     async def create_table(self):
         ...
 
+    @abc.abstractmethod
     async def insert_into_table(self):
-        ...
-
-    async def get_data(self):
-        ...
-
-    async def deleted_row(self):
         ...
 
 class TableAdmins(Table):
@@ -74,7 +72,7 @@ class TableUsers(Table):
                 return _id
             return False
 
-    async def get_data(self) -> dict:
+    async def get_data(self):
         async with pool.acquire() as conn:
             dicts = [dict(row) for row in await conn.fetch(""" SELECT (id, phone) FROM users """)]
             return dicts
@@ -88,7 +86,7 @@ class TableUsers(Table):
         async with pool.acquire() as conn:
             await conn.execute(""" UPDATE users SET phone = $1 WHERE id = $2 """, new_phone, userId)
 
-    async def check_user(self, phone: str, passwd: str) -> bool:
+    async def check_user(self, phone: str, passwd: str):
         result = False
         async with pool.acquire() as conn:
             res = await conn.fetchrow(""" SELECT phone, password FROM users WHERE phone = $1 """, phone)
@@ -115,7 +113,7 @@ class TableBasket(Table):
                                 UNIQUE(userId, marketPosId)
                             )  """)
 
-    async def get_data(self) -> dict:
+    async def get_data(self):
         async with pool.acquire() as conn:
             dicts = [dict(row) for row in await conn.fetch(""" SELECT basket.user_count_pos, marketPos.product_name FROM basket JOIN marketPos ON marketPos.id = basket.id JOIN users ON users.id=basket.userId  """)]
         return dicts
@@ -225,15 +223,6 @@ class TableOrders(Table):
         async with pool.acquire() as conn:
             res = await conn.fetch(""" SELECT * FROM orders WHERE userId = $1 """, userId)
             return res
-
-    # async def sort_by_date(self):
-    #     async with pool.acquire() as conn:
-    #         res = await conn.fetch(""" SELECT * FROM orders ORDER BY date_order """)
-    #         return res
-
-    # async def sort_by_price(self):
-    #     async with pool.acquire() as conn:
-    #         res = await conn.fetch(""" SELECT * FROM orders ORDER BY total_price  """)
 
 user_table = TableUsers()
 marketpos_table = TableMarketPosition()

@@ -3,7 +3,6 @@ const API_BASE_URL = 'http://localhost:8001';
 
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2RkZGRkZCIgZD0iTTE5IDVIMTVWM0g5djJINVYyMWgxOVY1TTE5IDE5VjVIMjFWMjFIMTlNMTkgMTcuNjVIMThWMTlIMTdWMTcuNjVIMTdWMTYuNUgxNy41VjE1SDE4LjVWMTYuNUgxOVYxNy42NU0xMyAxOUgxMVYxN0gxM3YyTTEzIDE1SDExVjEzSDEzdjJNMTMgMTFIMTFWOUgxM3YyTTE3IDE1SDE1VjEzSDE3djJNMTcgMTFIMTVWOkgxN3YyTTkgMTVIN1YxM0g5djJNOSAxMUg3VjlIOXYyTTkgMTlIN1YxN0g5djJNNSAxNUgzdjJoMnYtMk01IDExSDNWOWgydjJNNSAxOUgzdjJoMnYtMk0xOSAxMkgyMFYxNEgxOXYtMk0xOSA4SDIwVjEwSDE5VjhaIi8+PC9zdmc+';
 
-// Sorting variables
 let productSort = {
   column: null,
   direction: 'asc'
@@ -19,7 +18,6 @@ let ordersSort = {
   direction: 'desc'
 };
 
-// Common functions
 function checkAuth() {
   const token = getCookie('access-token');
   const isLoginPage = window.location.pathname.endsWith('index.html') || 
@@ -51,7 +49,6 @@ function handleLogout() {
   window.location.href = 'index.html';
 }
 
-// Login functionality
 function setupLogin() {
   const loginForm = document.getElementById('loginForm');
   if (loginForm) {
@@ -92,7 +89,6 @@ function setupLogin() {
   }
 }
 
-// Users management
 async function loadUsers() {
   try {
     const response = await fetch(`${API_BASE_URL}/users/get_users`);
@@ -105,7 +101,6 @@ async function loadUsers() {
       phone: item.row[1],
     }));
 
-    // Sort users
     usersData.sort((a, b) => {
       let valA, valB;
       
@@ -191,7 +186,6 @@ async function searchUsersByPhone() {
         phone: item.row[1],
       }));
 
-    // Apply sorting to search results
     filteredUsers.sort((a, b) => {
       let valA, valB;
       
@@ -310,7 +304,6 @@ async function deleteUser(userId) {
   }
 }
 
-// Products management
 async function getProductImageUrl(productId) {
   try {
     const response = await fetch(`${API_BASE_URL}/market/get/picture?productId=${productId}`);
@@ -332,7 +325,6 @@ async function loadProducts() {
     const data = await response.json();
     console.log('API Response:', data); // Для отладки
     
-    // Обработка разных форматов ответа
     let products = [];
     if (Array.isArray(data)) {
       products = data;
@@ -349,10 +341,8 @@ async function loadProducts() {
       return;
     }
 
-    // Сортировка
     if (productSort.column) {
       products.sort((a, b) => {
-        // Унифицированные названия полей
         const aValue = a[productSort.column] || 
                       (productSort.column === 'product_name' ? a.name : 
                        productSort.column === 'cur_count_pos' ? a.quantity : null);
@@ -397,7 +387,6 @@ async function loadProducts() {
       tableBody.appendChild(row);
     }
 
-    // Добавьте обработчики для кнопок
     document.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', () => openEditProductModal(btn.dataset.id));
     });
@@ -440,13 +429,11 @@ async function searchProductsByName() {
       throw new Error('Unexpected API response format');
     }
 
-    // Фильтрация по названию товара
     const filteredProducts = products.filter(product => {
       const productName = (product.product_name || product.name || '').toLowerCase();
       return productName.includes(searchTerm);
     });
 
-    // Применяем сортировку к отфильтрованным товарам
     if (productSort.column) {
       filteredProducts.sort((a, b) => {
         const aValue = a[productSort.column] ||
@@ -493,7 +480,6 @@ async function searchProductsByName() {
       tableBody.appendChild(row);
     }
 
-    // Добавляем обработчики для кнопок
     document.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', () => openEditProductModal(btn.dataset.id));
     });
@@ -573,7 +559,6 @@ async function saveProduct() {
 
   try {
     if (productId) {
-      // Update existing product
       const updateResponse = await fetch(`${API_BASE_URL}/market/update`, {
         method: 'PUT',
         headers: {
@@ -591,12 +576,10 @@ async function saveProduct() {
       const updateResult = await updateResponse.json();
       if (!updateResult.status) throw new Error('Ошибка при обновлении товара');
 
-      // Upload new image if selected
       if (imageFile) {
         await uploadProductImage(productId, imageFile);
       }
     } else {
-      // Create new product
       const url = new URL(`${API_BASE_URL}/market/insert`);
       url.searchParams.append('product_name', name);
       url.searchParams.append('description', description);
@@ -610,7 +593,6 @@ async function saveProduct() {
       const insertResult = await insertResponse.json();
       if (insertResult.status !== "ok") throw new Error('Ошибка при добавлении товара');
 
-      // Upload image for new product
       if (imageFile) {
         const newProductId = insertResult.id || await getProductIdByName(name);
         if (newProductId) {
@@ -689,14 +671,12 @@ async function deleteProduct(productId) {
   }
 }
 
-// Orders management
 async function loadOrders() {
   try {
     const ordersResponse = await fetch(`${API_BASE_URL}/orders/get_data`);
     if (!ordersResponse.ok) throw new Error('Не удалось загрузить заказы');
     let orders = await ordersResponse.json();
 
-    // Sort orders
     orders.sort((a, b) => {
       let valueA, valueB;
 
@@ -790,7 +770,6 @@ async function searchOrdersByPhone() {
     const orders = await response.json();
     let filteredOrders = [];
 
-    // Фильтрация заказов по номеру телефона
     for (const order of orders) {
       try {
         const userResponse = await fetch(`${API_BASE_URL}/users/get_user?userId=${order.userid}`);
@@ -805,7 +784,6 @@ async function searchOrdersByPhone() {
       }
     }
 
-    // Сортировка отфильтрованных заказов
     filteredOrders.sort((a, b) => {
       let valueA, valueB;
 
@@ -899,22 +877,18 @@ function updateOrdersSortIndicators() {
   });
 }
 
-// Initialize the page
 document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
 
-  // --- Login page setup ---
   if (document.getElementById('loginForm')) {
     setupLogin();
   }
 
-  // --- Logout button setup ---
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', handleLogout);
   }
 
-  // --- Users page ---
   if (document.getElementById('usersTable')) {
     loadUsers();
 
@@ -951,7 +925,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Setup sorting for users table
     document.querySelectorAll('#usersTable th.sortable').forEach(th => {
       if (!th.getAttribute('data-original-text')) {
         th.setAttribute('data-original-text', th.textContent.trim());
@@ -972,7 +945,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-// --- Orders page ---
 if (document.getElementById('ordersTable')) {
   loadOrders();
 
@@ -997,7 +969,6 @@ if (document.getElementById('ordersTable')) {
     });
   }
 
-  // Setup sorting for orders table
   document.querySelectorAll('#ordersTable th.sortable').forEach(th => {
     if (!th.getAttribute('data-original-text')) {
       th.setAttribute('data-original-text', th.textContent.trim());
@@ -1013,7 +984,6 @@ if (document.getElementById('ordersTable')) {
         ordersSort.direction = 'asc';
       }
 
-      // Применяем текущий поиск при сортировке
       if (document.getElementById('searchPhone').value.trim()) {
         searchOrdersByPhone();
       } else {
@@ -1023,12 +993,9 @@ if (document.getElementById('ordersTable')) {
   });
 }
 
-// Добавьте в конец файла script.js
 if (document.getElementById('productsTable')) {
-  // Загрузка товаров при открытии страницы
   loadProducts();
 
-  // Обработчики кнопок
   document.getElementById('addProductBtn')?.addEventListener('click', openAddProductModal);
   document.getElementById('refreshProductsBtn')?.addEventListener('click', loadProducts);
   document.getElementById('searchProductBtn')?.addEventListener('click', searchProductsByName);
@@ -1040,18 +1007,15 @@ if (document.getElementById('productsTable')) {
   });
 
 
-  // Обработчик формы
   document.getElementById('productForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
     saveProduct();
   });
 
-  // Закрытие модального окна
   document.querySelector('#productModal .close')?.addEventListener('click', function() {
     document.getElementById('productModal').style.display = 'none';
   });
 
-  // Сортировка
   document.querySelectorAll('#productsTable th.sortable').forEach(th => {
     if (!th.getAttribute('data-original-text')) {
       th.setAttribute('data-original-text', th.textContent.trim());
@@ -1071,7 +1035,6 @@ if (document.getElementById('productsTable')) {
     });
   });
 }
-  // --- Close modals when clicking outside ---
   window.addEventListener('click', (event) => {
     if (event.target.classList.contains('modal')) {
       event.target.style.display = 'none';

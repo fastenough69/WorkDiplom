@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Depends, Body, UploadFile
-from fastapi.responses import JSONResponse, Response, FileResponse
+from fastapi import FastAPI, Body, UploadFile
+from fastapi.responses import JSONResponse, FileResponse
 import uvicorn
 import asyncio
 from database import *
@@ -7,6 +7,9 @@ import bcrypt
 from decimal import Decimal
 from authx import AuthX, AuthXConfig, RequestToken
 import os
+import dotenv
+
+dotenv.load_dotenv()
 
 app = FastAPI()
 
@@ -39,19 +42,6 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     await destroy_conn()
-
-@app.get("/health")
-async def check_health():
-    ...
-
-# @app.post("/insert_more_pos")
-# async def insert_more_pos():
-#     pr_name = ["macbook", "RTX 3060", "RTX 5090", "Samsung Galaxy S27", "Холодильник"]
-#     ds = ["fdsdfgdf", "gfdgdfgd", "gjhfgdjdf", "hfdgsfd", "bvncx"]
-#     counts = [10, 20, 30, 321, 4324]
-#     price = [423423, 756756, 876867, 43244, 56564]
-#     for i in range(4):
-#         await marketpos_table.insert_into_table(pr_name[i], ds[i], counts[i], Decimal(price[i]))
 
 @app.get("/admins/create")
 async def create_table_admins():
@@ -205,7 +195,7 @@ async def create_basket():
     res = {"status": True}
     try:
         await basket_table.create_table()
-    except:
+    except: 
         res["status"] = False
     return res
 
@@ -263,15 +253,5 @@ async def get_orders_by_user(userId: int):
     res = await order_table.get_user_orders(userId)
     return res
 
-# @app.get("/orders/get_data/sort_by_date")
-# async def get_sort_by_date():
-#     res = await order_table.sort_by_date()
-#     return res
-
-# @app.get("/orders/get_data/sort_by_price")
-# async def get_sort_by_price():
-#     res = await order_table.sort_by_price()
-#     return res
-
 if(__name__ == "__main__"):
-    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run("main:app", host=os.getenv("HOST_APP"), port=int(os.getenv("APP_PORT_IN")), reload=True)
